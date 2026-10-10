@@ -6,6 +6,7 @@ import { pool } from './db.js';
 import {
   normalizeUrl, cleanText, cleanList, parseBool, parseDate, parseMoney, parseInteger, fingerprint,
 } from './normalize.js';
+import { toGigText, similarity, type GigText } from './similarity.js';
 
 export const CSV_COLUMNS = [
   'external_gig_id', 'title', 'track_id', 'payment_amount', 'compensation_type', 'min_amount',
@@ -102,15 +103,138 @@ function buildRecord(raw: Record<string, string>, rowNo: number) {
   return { record: hasError ? null : record, issues };
 }
 
-async function findExisting(conn: PoolConnection, sourceId: number, r: NonNullable<ReturnType<typeof buildRecord>['record']>) {
+type Record19 = NonNullable<ReturnType<typeof buildRecord>['record']>;
+
+// Fields that re-discovery may update. Editorial fields (priority, featured, local business,
+// referral) are managed by humans in the back office and are never touched here.
+const COMPARABLE = [
+  'title', 'track_id', 'payment_amount', 'compensation_type', 'min_amount', 'max_amount', 'currency',
+  'posted_at', 'short_description', 'overview', 'responsibilities', 'deliverables', 'requirements', 'proof_spec',
+] as const;
+const NUMERIC_FIELDS = new Set(['min_amount', 'max_amount']);
+// Pay fields belong together: if a human edited any of them, none is changed automatically.
+const PAY_GROUP = ['payment_amount', 'min_amount', 'max_amount', 'currency', 'compensation_type'];
+const LOCKED_STATES = ['approved', 'publish_ready', 'published'];
+
+type Change = { old: unknown; new: unknown };
+
+function sameValue(field: string, a: unknown, b: unknown): boolean {
+  return NUMERIC_FIELDS.has(field) ? Number(a) === Number(b) : String(a) === String(b);
+}
+
+// What did the source change? A missing value in the source never erases a stored value.
+function diffRecord(existing: Record<string, unknown>, record: Record<string, unknown>) {
+  const changes: Record<string, Change> = {};
+  for (const f of COMPARABLE) {
+    const incoming = record[f];
+    if (incoming === null || incoming === undefined || incoming === '') continue;
+    const current = existing[f];
+    if (current !== null && current !== undefined && sameValue(f, current, incoming)) continue;
+    changes[f] = { old: current ?? null, new: incoming };
+  }
+  return changes;
+}
+
+function computeMissing(g: Record<string, unknown>): string[] {
+  return ['title', 'track_id', 'short_description', 'overview'].filter((f) => !g[f]);
+}
+
+async function findExisting(conn: PoolConnection, sourceId: number, r: Record19) {
   const [rows] = await conn.query(
-    `SELECT id FROM gigs
-      WHERE origin_url_hash = SHA2(?, 256)
-         OR (? IS NOT NULL AND source_id = ? AND external_gig_id = ?)
-      LIMIT 1`,
-    [r.origin_url_normalized, r.external_gig_id, sourceId, r.external_gig_id],
+    `SELECT g.*, (g.origin_url_hash = SHA2(?, 256)) AS url_match FROM gigs g
+      WHERE g.origin_url_hash = SHA2(?, 256)
+         OR (? IS NOT NULL AND g.source_id = ? AND g.external_gig_id = ?)
+      ORDER BY url_match DESC LIMIT 1 FOR UPDATE`,
+    [r.origin_url_normalized, r.origin_url_normalized, r.external_gig_id, sourceId, r.external_gig_id],
   );
-  return (rows as { id: number }[])[0] ?? null;
+  const row = (rows as Record<string, any>[])[0];
+  return row ? { row, byUrl: row.url_match === 1 || row.url_match === '1' } : null;
+}
+
+type Counts = {
+  total: number; created: number; unchanged: number; updated: number; held: number;
+  conflict: number; similar: number; failed: number;
+};
+
+async function audit(conn: PoolConnection, gigId: number, action: string, details: unknown) {
+  await conn.query(
+    "INSERT INTO audit_log (entity_type, entity_id, action, actor_type, details) VALUES ('gig', ?, ?, 'discovery_agent', ?)",
+    [gigId, action, JSON.stringify(details)]);
+}
+
+// The gig already exists: decide between "unchanged", "update", "hold for a human" or "conflict".
+async function handleKnownGig(
+  conn: PoolConnection, runId: number, match: NonNullable<Awaited<ReturnType<typeof findExisting>>>,
+  record: Record19, counts: Counts, notes: string[], rowNo: number,
+) {
+  const { row, byUrl } = match;
+  const changes = diffRecord(row, record as unknown as Record<string, unknown>);
+  const keys = Object.keys(changes);
+  await conn.query('UPDATE gigs SET last_seen_at = NOW(3), last_run_id = ? WHERE id = ?', [runId, row.id]);
+  const pending = (reason: string, ch: Record<string, Change>) =>
+    JSON.stringify({ reason, run_id: runId, detected_at: new Date().toISOString(), changes: ch });
+
+  // Same external id but a different link: could be a repost or a moved page. A human decides.
+  if (!byUrl) {
+    const ch = { ...changes, origin_url: { old: row.origin_url, new: record.origin_url } };
+    await conn.query('UPDATE gigs SET pending_source_changes = ? WHERE id = ?', [pending('same_external_id_different_url', ch), row.id]);
+    await audit(conn, row.id, 'rediscovery_conflict', { run_id: runId, fields: Object.keys(ch) });
+    counts.conflict++;
+    notes.push(`line ${rowNo}: external id ${record.external_gig_id} already exists with a different link. Nothing changed; flagged for a reviewer.`);
+    return;
+  }
+
+  if (keys.length === 0) {
+    if (row.pending_source_changes) await conn.query('UPDATE gigs SET pending_source_changes = NULL WHERE id = ?', [row.id]);
+    counts.unchanged++;
+    return;
+  }
+
+  // Approved / published gigs are never changed behind the reviewer's back.
+  if (LOCKED_STATES.includes(row.workflow_state)) {
+    await conn.query('UPDATE gigs SET pending_source_changes = ? WHERE id = ?', [pending('source_changed_after_approval', changes), row.id]);
+    await audit(conn, row.id, 'rediscovery_held', { run_id: runId, fields: keys, state: row.workflow_state });
+    counts.held++;
+    notes.push(`line ${rowNo}: ${row.external_gig_id} is ${row.workflow_state}; source changed (${keys.join(', ')}). Held for review.`);
+    return;
+  }
+
+  // Fields a human edited are protected; everything else is updated and versioned.
+  const provenance = (row.field_provenance ?? {}) as Record<string, string>;
+  const humanEdited = (k: string) =>
+    provenance[k] === 'human' || (PAY_GROUP.includes(k) && PAY_GROUP.some((p) => provenance[p] === 'human'));
+  const applyKeys = keys.filter((k) => !humanEdited(k));
+  const protectedKeys = keys.filter((k) => humanEdited(k));
+
+  if (applyKeys.length > 0) {
+    const merged: Record<string, unknown> = { ...row };
+    const sets: string[] = [];
+    const vals: unknown[] = [];
+    for (const k of applyKeys) { sets.push(`${k} = ?`); vals.push(changes[k].new); merged[k] = changes[k].new; }
+    if (applyKeys.includes('posted_at')) sets.push("posted_at_status = 'found'");
+    if (applyKeys.includes('payment_amount')) { sets.push('payment_source_text = ?'); vals.push(changes.payment_amount.new); }
+    const missing = computeMissing(merged);
+    const protectedChanges = Object.fromEntries(protectedKeys.map((k) => [k, changes[k]]));
+    await conn.query(
+      `UPDATE gigs SET ${sets.join(', ')}, current_version = current_version + 1, content_fingerprint = ?,
+         missing_fields = ?, data_completeness = ?, pending_source_changes = ? WHERE id = ?`,
+      [...vals, fingerprint([merged.title, merged.short_description, merged.overview, merged.payment_amount,
+        merged.responsibilities, merged.deliverables, merged.requirements, merged.proof_spec] as (string | null)[]),
+       JSON.stringify(missing), missing.length === 0 ? 'complete' : 'partial',
+       protectedKeys.length ? pending('human_edited_fields', protectedChanges) : null, row.id]);
+    const [snap] = await conn.query(`SELECT ${COMPARABLE.join(', ')} FROM gigs WHERE id = ?`, [row.id]);
+    await conn.query(
+      "INSERT INTO gig_versions (gig_id, version_no, change_origin, changed_fields, snapshot) VALUES (?, ?, 'discovery', ?, ?)",
+      [row.id, row.current_version + 1, JSON.stringify(Object.fromEntries(applyKeys.map((k) => [k, changes[k]]))), JSON.stringify((snap as unknown[])[0])]);
+    await audit(conn, row.id, 'rediscovery_update', { run_id: runId, fields: applyKeys, protected: protectedKeys });
+    counts.updated++;
+    notes.push(`line ${rowNo}: ${row.external_gig_id ?? row.id} updated to version ${row.current_version + 1} (${applyKeys.join(', ')})${protectedKeys.length ? `; protected human edits: ${protectedKeys.join(', ')}` : ''}.`);
+  } else {
+    await conn.query('UPDATE gigs SET pending_source_changes = ? WHERE id = ?', [pending('human_edited_fields', changes), row.id]);
+    await audit(conn, row.id, 'rediscovery_held', { run_id: runId, fields: keys, reason: 'human_edited_fields' });
+    counts.held++;
+    notes.push(`line ${rowNo}: ${row.external_gig_id ?? row.id} source changed only fields a human edited (${keys.join(', ')}). Kept the human values.`);
+  }
 }
 
 export async function importCsv(filePath: string, sourceCode = 'SAMPLE_CSV', userId: number | null = null) {
@@ -128,7 +252,15 @@ export async function importCsv(filePath: string, sourceCode = 'SAMPLE_CSV', use
     [source.id, userId]);
   const runId = (runRes as { insertId: number }).insertId;
 
-  const counts = { total: 0, created: 0, duplicate: 0, failed: 0 };
+  const counts: Counts = { total: 0, created: 0, unchanged: 0, updated: 0, held: 0, conflict: 0, similar: 0, failed: 0 };
+  const notes: string[] = [];
+
+  // Existing gigs, kept in memory to spot look-alikes (content similarity)
+  const [thr] = await pool.query("SELECT value FROM settings WHERE key_name = 'dedup.similarity_threshold'");
+  const threshold = Number((thr as { value: unknown }[])[0]?.value ?? 0.88);
+  const [known] = await pool.query('SELECT id, title, overview FROM gigs');
+  const knownText: { id: number; text: GigText }[] = (known as { id: number; title: string | null; overview: string | null }[])
+    .map((g) => ({ id: g.id, text: toGigText(g.title, g.overview) }));
   const issues: Issue[] = [];
 
   try {
@@ -159,10 +291,10 @@ export async function importCsv(filePath: string, sourceCode = 'SAMPLE_CSV', use
       const conn = await pool.getConnection();
       try {
         await conn.beginTransaction();
-        const existing = await findExisting(conn, source.id, record);
-        if (existing) {
-          counts.duplicate++;
-          await conn.rollback();
+        const match = await findExisting(conn, source.id, record);
+        if (match) {
+          await handleKnownGig(conn, runId, match, record, counts, notes, rowNo);
+          await conn.commit();
           continue;
         }
         const [ins] = await conn.query(
@@ -182,11 +314,27 @@ export async function importCsv(filePath: string, sourceCode = 'SAMPLE_CSV', use
         await conn.query(
           "INSERT INTO gig_versions (gig_id, version_no, change_origin, snapshot) VALUES (?, 1, 'csv_import', ?)",
           [gigId, JSON.stringify(record)]);
+        // Look-alike check: flag for a human, never merge automatically
+        const mine = toGigText(record.title, record.overview);
+        let best: { id: number; score: number } | null = null;
+        for (const k of knownText) {
+          const score = similarity(mine, k.text);
+          if (score >= threshold && (!best || score > best.score)) best = { id: k.id, score };
+        }
+        if (best) {
+          await conn.query(
+            "INSERT INTO duplicate_candidates (gig_id, matched_gig_id, match_signal, similarity) VALUES (?, ?, 'content_similarity', ?)",
+            [gigId, best.id, best.score.toFixed(4)]);
+          await conn.query("UPDATE gigs SET duplicate_state = 'suspected', duplicate_of_gig_id = ? WHERE id = ?", [best.id, gigId]);
+          counts.similar++;
+          notes.push(`line ${rowNo}: new gig ${record.external_gig_id ?? gigId} looks ${(best.score * 100).toFixed(0)}% like gig #${best.id}. Flagged as suspected duplicate.`);
+        }
+        knownText.push({ id: gigId, text: mine });
         await conn.commit();
         counts.created++;
       } catch (e) {
         await conn.rollback();
-        if ((e as { code?: string }).code === 'ER_DUP_ENTRY') { counts.duplicate++; }
+        if ((e as { code?: string }).code === 'ER_DUP_ENTRY') { counts.unchanged++; }
         else {
           counts.failed++;
           issues.push({ row: rowNo, severity: 'error', field: '-', message: (e as Error).message });
@@ -209,18 +357,20 @@ export async function importCsv(filePath: string, sourceCode = 'SAMPLE_CSV', use
     throw e;
   }
 
-  const runStatus = counts.failed === 0 ? 'succeeded' : counts.created + counts.duplicate > 0 ? 'partial' : 'failed';
+  const matched = counts.unchanged + counts.updated + counts.held + counts.conflict;
+  const runStatus = counts.failed === 0 ? 'succeeded' : counts.created + matched > 0 ? 'partial' : 'failed';
   await pool.query(
-    `UPDATE discovery_runs SET status=?, finished_at=NOW(3), found_count=?, created_count=?, duplicate_count=?, failed_count=?
-      WHERE id=?`, [runStatus, counts.total, counts.created, counts.duplicate, counts.failed, runId]);
+    `UPDATE discovery_runs SET status=?, finished_at=NOW(3), found_count=?, created_count=?, updated_count=?, unchanged_count=?,
+        duplicate_count=?, failed_count=? WHERE id=?`,
+    [runStatus, counts.total, counts.created, counts.updated, counts.unchanged, matched, counts.failed, runId]);
   await pool.query(
-    `UPDATE csv_jobs SET status=?, finished_at=NOW(3), total_rows=?, created_rows=?, skipped_rows=?, failed_rows=?, error_report=?
+    `UPDATE csv_jobs SET status=?, finished_at=NOW(3), total_rows=?, created_rows=?, updated_rows=?, skipped_rows=?, failed_rows=?, error_report=?
       WHERE id=?`,
-    [counts.failed ? 'completed_with_errors' : 'completed', counts.total, counts.created, counts.duplicate, counts.failed, JSON.stringify(issues), jobId]);
+    [counts.failed ? 'completed_with_errors' : 'completed', counts.total, counts.created, counts.updated + counts.held, counts.unchanged + counts.conflict, counts.failed, JSON.stringify(issues), jobId]);
   await pool.query('UPDATE sources SET last_successful_run_at = NOW(3), health = ? WHERE id = ?', ['healthy', source.id]);
   await pool.query(
     "INSERT INTO audit_log (entity_type, entity_id, action, actor_type, actor_user_id, details) VALUES ('discovery_run', ?, 'csv_import', ?, ?, ?)",
     [runId, userId ? 'user' : 'system', userId, JSON.stringify({ file: fileName, ...counts })]);
 
-  return { runId, jobId, runStatus, counts, issues };
+  return { runId, jobId, runStatus, counts, issues, notes };
 }

@@ -9,14 +9,24 @@ async function main() {
   const file = path.resolve(process.env.INIT_CWD ?? process.cwd(), arg);
   console.log('Importing', file);
   const r = await importCsv(file);
+  const c = r.counts;
   console.log(`\nRun #${r.runId} finished: ${r.runStatus}`);
-  console.log(`  rows in file : ${r.counts.total}`);
-  console.log(`  new gigs     : ${r.counts.created}`);
-  console.log(`  duplicates   : ${r.counts.duplicate}  (skipped)`);
-  console.log(`  failed rows  : ${r.counts.failed}`);
-  if (r.issues.length) {
+  console.log(`  rows in file        : ${c.total}`);
+  console.log(`  new gigs            : ${c.created}   (flagged as look-alikes: ${c.similar})`);
+  console.log(`  already known       : ${c.unchanged + c.updated + c.held + c.conflict}`);
+  console.log(`     unchanged        : ${c.unchanged}`);
+  console.log(`     updated (new version): ${c.updated}`);
+  console.log(`     changes held for review: ${c.held}`);
+  console.log(`     id/link conflicts: ${c.conflict}`);
+  console.log(`  failed rows         : ${c.failed}`);
+  if (r.notes.length) {
+    console.log('\nWhat happened to known or similar gigs:');
+    for (const n of r.notes) console.log('  ' + n);
+  }
+  const problems = r.issues.filter((i) => i.severity === 'error' || i.severity === 'warning');
+  if (problems.length) {
     console.log('\nProblems found:');
-    for (const i of r.issues) console.log(`  line ${i.row} [${i.severity}] ${i.field}: ${i.message}`);
+    for (const i of problems) console.log(`  line ${i.row} [${i.severity}] ${i.field}: ${i.message}`);
   }
   await pool.end();
 }
