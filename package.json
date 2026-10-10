@@ -1,0 +1,8 @@
+{
+  "name": "upshift-gig-system",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev:api": "npm run dev -w apps/api"
+  }
+}
