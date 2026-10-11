@@ -6,7 +6,8 @@
     "dev": "tsx watch src/server.ts",
     "migrate": "tsx src/migrate.ts",
     "seed:admin": "tsx src/seed-admin.ts",
-    "import:csv": "tsx src/import-csv-cli.ts"
+    "import:csv": "tsx src/import-csv-cli.ts",
+    "verify": "tsx src/verify-cli.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
@@ -17,6 +18,8 @@
     "@fastify/cookie": "^11.1.3",
     "@fastify/jwt": "^10.2.4",
     "bcryptjs": "^3.0.3",
-    "csv-parse": "^7.0.3"
+    "cheerio": "^1.2.0",
+    "csv-parse": "^7.0.3",
+    "robots-parser": "^3.0.1"
   }
 }

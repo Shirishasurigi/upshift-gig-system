@@ -6,6 +6,8 @@ import { config } from './config.js';
 import { pool } from './db.js';
 import { authRoutes } from './auth.js';
 import { discoveryRoutes } from './discoveryRoutes.js';
+import { gigsRoutes } from './gigsRoutes.js';
+import { fixtureRoutes } from './fixtures.js';
 
 const app = Fastify({ logger: true });
 
@@ -20,5 +22,7 @@ app.get('/health', async () => {
 
 await app.register(authRoutes);
 await app.register(discoveryRoutes);
+await app.register(gigsRoutes);
+await app.register(fixtureRoutes);
 
 await app.listen({ host: config.host, port: config.port });
