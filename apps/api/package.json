@@ -7,7 +7,9 @@
     "migrate": "tsx src/migrate.ts",
     "seed:admin": "tsx src/seed-admin.ts",
     "import:csv": "tsx src/import-csv-cli.ts",
-    "verify": "tsx src/verify-cli.ts"
+    "verify": "tsx src/verify-cli.ts",
+    "classify": "tsx src/classify-cli.ts",
+    "pipeline": "tsx src/pipeline-cli.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
