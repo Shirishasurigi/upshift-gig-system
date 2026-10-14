@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { pool } from './db.js';
 import { requireRole } from './auth.js';
 import { verifyGig } from './verify.js';
+import { getGigDetail, HttpError } from './review.js';
 
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 const listQuery = z.object({
@@ -47,20 +48,30 @@ export async function gigsRoutes(app: FastifyInstance) {
     return { data: rows, page: f.page, pageSize: f.pageSize, total: c.total };
   });
 
+  // Everything a reviewer needs on one page: fields, latest check, referral, and warning flags
   app.get('/api/v1/gigs/:id', anyUser, async (request, reply) => {
     const p = idParam.safeParse(request.params);
     if (!p.success) return reply.code(400).send({ error: { code: 'BAD_REQUEST', message: 'Invalid id' } });
-    const [rows] = await pool.query('SELECT g.*, s.code AS source_code FROM gigs g JOIN sources s ON s.id = g.source_id WHERE g.id = ?', [p.data.id]);
-    const gig = (rows as any[])[0];
-    if (!gig) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Gig not found' } });
-    const [vr] = await pool.query('SELECT * FROM verifications WHERE id = ?', [gig.latest_verification_id ?? 0]);
-    return { ...gig, latest_verification: (vr as any[])[0] ?? null };
+    try { return await getGigDetail(p.data.id); }
+    catch (e) {
+      if (e instanceof HttpError) return reply.code(e.status).send({ error: { code: e.code, message: e.message } });
+      throw e;
+    }
   });
 
   app.get('/api/v1/gigs/:id/verifications', anyUser, async (request, reply) => {
     const p = idParam.safeParse(request.params);
     if (!p.success) return reply.code(400).send({ error: { code: 'BAD_REQUEST', message: 'Invalid id' } });
     const [rows] = await pool.query('SELECT * FROM verifications WHERE gig_id = ? ORDER BY id DESC', [p.data.id]);
+    return { data: rows };
+  });
+
+  // How the module was chosen (keywords / AI), including gigs left for a human
+  app.get('/api/v1/gigs/:id/classifications', anyUser, async (request, reply) => {
+    const p = idParam.safeParse(request.params);
+    if (!p.success) return reply.code(400).send({ error: { code: 'BAD_REQUEST', message: 'Invalid id' } });
+    const [rows] = await pool.query(
+      'SELECT id, proposed_track_id, confidence, rationale, alternatives, model, prompt_version, outcome, created_at FROM ai_classifications WHERE gig_id = ? ORDER BY id DESC', [p.data.id]);
     return { data: rows };
   });
 

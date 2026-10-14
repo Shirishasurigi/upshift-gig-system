@@ -8,6 +8,8 @@ import { authRoutes } from './auth.js';
 import { discoveryRoutes } from './discoveryRoutes.js';
 import { gigsRoutes } from './gigsRoutes.js';
 import { fixtureRoutes } from './fixtures.js';
+import { reviewRoutes } from './reviewRoutes.js';
+import { sourcesRoutes } from './sourcesRoutes.js';
 
 const app = Fastify({ logger: true });
 
@@ -24,5 +26,7 @@ await app.register(authRoutes);
 await app.register(discoveryRoutes);
 await app.register(gigsRoutes);
 await app.register(fixtureRoutes);
+await app.register(reviewRoutes);
+await app.register(sourcesRoutes);
 
 await app.listen({ host: config.host, port: config.port });
