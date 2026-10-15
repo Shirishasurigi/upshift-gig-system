@@ -1,0 +1,22 @@
+{
+ "error": {
+  "code": "STALE",
+  "message": "The opportunity is no longer confirmed open (stopped): The page says the opportunity is closed The gig was sent back to Review Pending.",
+  "details": {
+   "verification": {
+    "unpublished": false,
+    "gigId": 10,
+    "externalId": "GIG-CD-301",
+    "verificationId": 40,
+    "status": "stopped",
+    "confidence": 0.9,
+    "signal": "closed",
+    "restriction": "none",
+    "reasons": [
+     "The page says the opportunity is closed"
+    ],
+    "humanPinned": false
+   }
+  }
+ }
+}

@@ -1,0 +1,6 @@
+{
+ "error": {
+  "code": "CSV_REJECTED",
+  "message": "CSV is missing columns: external_gig_id, track_id, payment_amount, compensation_type, min_amount, max_amount, currency, priority, is_featured, is_local_business, posted_at, short_description, overview, responsibilities, deliverables, requirements, proof_spec"
+ }
+}

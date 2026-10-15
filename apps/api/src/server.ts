@@ -10,6 +10,9 @@ import { gigsRoutes } from './gigsRoutes.js';
 import { fixtureRoutes } from './fixtures.js';
 import { reviewRoutes } from './reviewRoutes.js';
 import { sourcesRoutes } from './sourcesRoutes.js';
+import { publishRoutes } from './publishRoutes.js';
+import { publicRoutes } from './publicRoutes.js';
+import { csvRoutes } from './csvRoutes.js';
 
 const app = Fastify({ logger: true });
 
@@ -28,5 +31,8 @@ await app.register(gigsRoutes);
 await app.register(fixtureRoutes);
 await app.register(reviewRoutes);
 await app.register(sourcesRoutes);
+await app.register(publishRoutes);
+await app.register(publicRoutes);
+await app.register(csvRoutes);
 
 await app.listen({ host: config.host, port: config.port });

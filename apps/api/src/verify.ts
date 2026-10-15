@@ -3,6 +3,8 @@ import * as cheerio from 'cheerio';
 import { createRequire } from 'node:module';
 import { pool } from './db.js';
 import { tokens, jaccard } from './similarity.js';
+import { unpublishInTx } from './lifecycle.js';
+import { dispatch } from './notify.js';
 
 // robots-parser is an older-style package, so we load it this way to keep TypeScript happy
 type RobotsRules = { isAllowed(url: string, userAgent?: string): boolean | undefined };
@@ -201,7 +203,7 @@ function analyze(g: GigRow, page: Page, th: { activeMin: number; reviewBelow: nu
 // ---------- 3. Verify one gig and save the evidence ----------
 export async function verifyGig(gigId: number, trigger: Trigger = 'manual', userId: number | null = null) {
   const [rows] = await pool.query(
-    `SELECT g.id, g.external_gig_id, g.title, g.posted_at, g.payment_amount, g.origin_url, g.source_id, g.availability_set_by,
+    `SELECT g.id, g.external_gig_id, g.title, g.posted_at, g.payment_amount, g.origin_url, g.source_id, g.availability_set_by, g.workflow_state,
             s.rate_limit_per_minute FROM gigs g JOIN sources s ON s.id = g.source_id WHERE g.id = ?`, [gigId]);
   const gig = (rows as any[])[0];
   if (!gig) throw new Error(`Gig ${gigId} not found`);
@@ -216,6 +218,7 @@ export async function verifyGig(gigId: number, trigger: Trigger = 'manual', user
   // Below the review threshold we never trust a positive result
   if (d.status === 'active' && d.confidence < th.reviewBelow) { d.status = 'needs_review'; d.reasons.push('Confidence too low'); }
 
+  let notifyIds: number[] = [];
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -236,16 +239,24 @@ export async function verifyGig(gigId: number, trigger: Trigger = 'manual', user
         [gigId, gig.source_id, gig.origin_url, page.finalUrl, page.status, 'text/plain', d.pageText.slice(0, MAX_BYTES)]);
     }
     const pinned = gig.availability_set_by === 'human';
+    // A published gig is treated carefully: it goes offline only on clear proof (closed).
+    // An unclear result (timeout, login wall...) is recorded but never takes a live gig down.
+    const isPublished = gig.workflow_state === 'published';
+    const goOffline = isPublished && d.status === 'stopped';
+    const keepStatus = isPublished && d.status === 'needs_review';
+    const setStatus = !goOffline && !keepStatus;
     await conn.query(
-      `UPDATE gigs SET availability_status = IF(availability_set_by = 'system', ?, availability_status),
+      `UPDATE gigs SET ${setStatus ? "availability_status = IF(availability_set_by = 'system', ?, availability_status)," : ''}
          verification_confidence = ?, last_verified_at = NOW(3), latest_verification_id = ?,
          workflow_state = IF(workflow_state = 'discovered', 'review_pending', workflow_state) WHERE id = ?`,
-      [d.status, d.confidence, vid, gigId]);
+      setStatus ? [d.status, d.confidence, vid, gigId] : [d.confidence, vid, gigId]);
+    if (goOffline) notifyIds = await unpublishInTx(conn, gigId, { userId: null, reason: `Closed (found by a ${trigger} check): ${d.reasons[d.reasons.length - 1]}`, availability: 'stopped' });
     await conn.query(
       "INSERT INTO audit_log (entity_type, entity_id, action, actor_type, actor_user_id, details) VALUES ('gig', ?, 'verified', ?, ?, ?)",
       [gigId, userId ? 'user' : 'verification_engine', userId, JSON.stringify({ trigger, result: d.status, confidence: d.confidence, human_pinned: pinned })]);
     await conn.commit();
-    return { gigId, externalId: gig.external_gig_id as string | null, verificationId: vid, status: d.status, confidence: d.confidence, signal: d.signal, restriction: d.restriction, reasons: d.reasons, humanPinned: pinned };
+    if (notifyIds.length) await dispatch(notifyIds); // tell the website and admins after the change is saved
+    return { unpublished: goOffline, gigId, externalId: gig.external_gig_id as string | null, verificationId: vid, status: d.status, confidence: d.confidence, signal: d.signal, restriction: d.restriction, reasons: d.reasons, humanPinned: pinned };
   } catch (e) {
     await conn.rollback();
     throw e;

@@ -1,0 +1,38 @@
+{
+ "dryRun": true,
+ "jobId": null,
+ "runId": null,
+ "status": "partial",
+ "created": 0,
+ "updated": 0,
+ "skipped": 24,
+ "failed": 2,
+ "counts": {
+  "total": 26,
+  "created": 0,
+  "unchanged": 23,
+  "updated": 0,
+  "held": 0,
+  "conflict": 1,
+  "similar": 0,
+  "failed": 2
+ },
+ "errors": [
+  {
+   "row": 26,
+   "severity": "error",
+   "field": "min_amount",
+   "message": "min_amount (80) is bigger than max_amount (40)"
+  },
+  {
+   "row": 27,
+   "severity": "error",
+   "field": "origin_url",
+   "message": "origin_url is required"
+  }
+ ],
+ "notes": [
+  "line 24: external id GIG-RR-101 already exists with a different link. Nothing changed; flagged for a reviewer."
+ ],
+ "processing": "not_needed"
+}

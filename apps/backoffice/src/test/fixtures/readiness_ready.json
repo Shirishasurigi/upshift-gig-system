@@ -1,0 +1,42 @@
+{
+ "gigId": 9,
+ "ready": true,
+ "checks": [
+  {
+   "rule": "approved",
+   "blocking": true,
+   "ok": true,
+   "message": "A person approved this gig."
+  },
+  {
+   "rule": "required_fields",
+   "blocking": true,
+   "ok": true,
+   "message": "All required fields are filled in."
+  },
+  {
+   "rule": "referral",
+   "blocking": true,
+   "ok": true,
+   "message": "No referral needed for this source."
+  },
+  {
+   "rule": "no_duplicates",
+   "blocking": true,
+   "ok": true,
+   "message": "No unresolved duplicate."
+  },
+  {
+   "rule": "no_held_changes",
+   "blocking": true,
+   "ok": true,
+   "message": "No held source changes."
+  },
+  {
+   "rule": "live_status",
+   "blocking": false,
+   "ok": true,
+   "message": "Last known status: active. It is checked again at the moment you publish."
+  }
+ ]
+}

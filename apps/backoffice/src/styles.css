@@ -47,3 +47,11 @@ dl { margin:0; } .kv { display:grid; grid-template-columns:140px 1fr; gap:10px; 
 .evidence { padding:8px 0; border-bottom:1px dashed var(--line); } blockquote { margin:4px 0 0; padding:4px 10px; border-left:3px solid var(--brand); background:#f4f6ff; color:#2a3358; font-size:13px; }
 .reasons { margin:6px 0; padding-left:18px; } .history { list-style:none; margin:0; padding:0; } .history li { padding:5px 0; border-bottom:1px dashed var(--line); font-size:13px; }
 .dup { padding:6px 0; border-bottom:1px dashed var(--line); }
+
+.checks { list-style:none; margin:0 0 10px; padding:0; } .checks li { padding:4px 0; font-size:13px; display:flex; gap:8px; }
+.checks .mark { width:18px; font-weight:700; text-align:center; } .checks .ok .mark { color:var(--ok); } .checks .bad .mark { color:var(--bad); } .checks .info .mark { color:var(--warn); }
+.checks .bad { color:#8a1c1c; }
+tr.failed td { background:#fff5f5; }
+a.button { display:inline-block; padding:6px 12px; border:1px solid var(--line); background:#fff; border-radius:6px; color:var(--ink); text-decoration:none; align-self:flex-end; }
+a.button.primary { background:var(--brand); color:#fff; border-color:var(--brand); }
+.panel h4 { margin:12px 0 6px; }

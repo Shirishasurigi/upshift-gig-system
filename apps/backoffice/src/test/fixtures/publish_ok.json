@@ -1,0 +1,16 @@
+{
+ "gigId": 9,
+ "publicationId": 10,
+ "workflowState": "published",
+ "notifications": [
+  {
+   "id": 21,
+   "status": "skipped",
+   "error": "No website refresh address configured (WEBSITE_REVALIDATE_URL)"
+  },
+  {
+   "id": 22,
+   "status": "sent"
+  }
+ ]
+}

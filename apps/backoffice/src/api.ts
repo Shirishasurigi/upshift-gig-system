@@ -22,6 +22,22 @@ export async function api<T = any>(method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'D
   return data as T;
 }
 
+// Uploading a file is the one request that is not JSON
+export async function upload<T = any>(path: string, file: File): Promise<T> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(BASE + path, { method: 'POST', credentials: 'include', body: form });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) {
+    const e = data?.error ?? {};
+    throw new ApiError(res.status, e.code ?? 'ERROR', e.message ?? `Upload failed (${res.status})`, e.details);
+  }
+  return data as T;
+}
+
+export const apiBase = BASE;
+
 export type Role = 'admin' | 'reviewer' | 'publisher';
 export type Me = { id: number; role: Role; name: string };
 export type Paged<T> = { data: T[]; page: number; pageSize: number; total: number };

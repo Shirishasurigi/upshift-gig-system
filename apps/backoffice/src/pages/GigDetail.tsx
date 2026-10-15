@@ -26,6 +26,7 @@ export default function GigDetail({ me }: { me: Me }) {
   const qc = useQueryClient();
   const canReview = me.role === 'admin' || me.role === 'reviewer';
   const canReferral = canReview || me.role === 'publisher';
+  const canPublish = me.role === 'admin' || me.role === 'publisher';
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
   const gigQ = useQuery({ queryKey: ['gig', id], queryFn: () => api<Gig>('GET', `/api/v1/gigs/${id}`) });
@@ -36,16 +37,20 @@ export default function GigDetail({ me }: { me: Me }) {
   });
   const classQ = useQuery({ queryKey: ['classifications', id], queryFn: () => api<{ data: Gig[] }>('GET', `/api/v1/gigs/${id}/classifications`) });
   const dupQ = useQuery({ queryKey: ['duplicates', id], queryFn: () => api<{ data: Gig[] }>('GET', `/api/v1/gigs/${id}/duplicates`) });
+  const readyQ = useQuery({ queryKey: ['readiness', id], queryFn: () => api<{ ready: boolean; checks: { rule: string; ok: boolean; blocking: boolean; message: string }[] }>('GET', `/api/v1/gigs/${id}/publish-readiness`) });
   const histQ = useQuery({ queryKey: ['history', id], queryFn: () => api<Gig>('GET', `/api/v1/gigs/${id}/history`) });
 
   // One helper for every button that changes something
   const refresh = () => {
-    for (const k of ['gig', 'evidence', 'classifications', 'duplicates', 'history']) qc.invalidateQueries({ queryKey: [k] });
+    for (const k of ['gig', 'evidence', 'classifications', 'duplicates', 'history', 'readiness']) qc.invalidateQueries({ queryKey: [k] });
     qc.invalidateQueries({ queryKey: ['gigs'] });
   };
   const run = useMutation({
     mutationFn: (a: { method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'; path: string; body?: unknown; okText: string }) => api(a.method, a.path, a.body),
-    onSuccess: (_d, a) => { setMessage({ kind: 'ok', text: a.okText }); refresh(); },
+    onSuccess: (d: any, a) => {
+      const sent = Array.isArray(d?.notifications) ? ` Notifications: ${d.notifications.map((n: any) => n.status).join(', ')}.` : '';
+      setMessage({ kind: 'ok', text: a.okText + sent }); refresh();
+    },
     onError: (e) => setMessage({ kind: 'error', text: errorText(e) }),
   });
   const call = (method: 'POST' | 'PUT' | 'PATCH' | 'DELETE', path: string, okText: string, body?: unknown) => {
@@ -108,6 +113,12 @@ export default function GigDetail({ me }: { me: Me }) {
         </div>
 
         <div className="col">
+          <Panel title="Publishing">
+            <Publishing gig={gig} readiness={readyQ.data} canPublish={canPublish} busy={busy}
+              onPublish={() => call('POST', `/api/v1/gigs/${id}/publish`, 'Published.', {})}
+              onUnpublish={(reason) => call('POST', `/api/v1/gigs/${id}/unpublish`, 'Unpublished.', { reason })} />
+          </Panel>
+
           <Panel title="Decision">
             {!canReview && <p className="muted">Your role ({me.role}) cannot make review decisions.</p>}
             {canReview && <Actions can={can} busy={busy} onAct={(a, note) => call('POST', `/api/v1/gigs/${id}/${a}`, `${ACTION_LABEL[a]} done.`, { note })} />}
@@ -336,4 +347,54 @@ function History({ data }: { data?: Gig }) {
   ].sort((a, b) => String(b.when).localeCompare(String(a.when)));
   if (items.length === 0) return <p className="muted">Nothing yet.</p>;
   return <ul className="history">{items.map((i, k) => <li key={k}><span className="muted">{fmtDate(i.when)}</span> {i.text}</li>)}</ul>;
+}
+
+function Publishing({ gig, readiness, canPublish, busy, onPublish, onUnpublish }: {
+  gig: Gig; readiness?: { ready: boolean; checks: { rule: string; ok: boolean; blocking: boolean; message: string }[] };
+  canPublish: boolean; busy: boolean; onPublish: () => void; onUnpublish: (reason: string) => void;
+}) {
+  const [reason, setReason] = useState('');
+  const [confirming, setConfirming] = useState(false);
+  const state = gig.workflow_state as string;
+  if (state === 'published') {
+    return (
+      <div>
+        <p><Badge value="published" /> This gig is live. Its status is checked again regularly and it goes offline automatically if it closes.</p>
+        {canPublish ? (
+          <form className="notebox" onSubmit={(e) => { e.preventDefault(); onUnpublish(reason); setReason(''); }}>
+            <label>Unpublish: reason (required)
+              <input value={reason} onChange={(e) => setReason(e.target.value)} required minLength={3} />
+            </label>
+            <div className="row"><button className="danger" type="submit" disabled={busy}>Unpublish</button></div>
+          </form>
+        ) : <p className="muted">Only a publisher can unpublish.</p>}
+      </div>
+    );
+  }
+  return (
+    <div>
+      {!readiness ? <p className="muted">Checking...</p> : (
+        <ul className="checks">
+          {readiness.checks.map((c) => (
+            <li key={c.rule} className={c.ok ? 'ok' : c.blocking ? 'bad' : 'info'}>
+              <span className="mark">{c.ok ? '\u2713' : c.blocking ? '\u2717' : 'i'}</span> {c.message}
+            </li>
+          ))}
+        </ul>
+      )}
+      {!canPublish && <p className="muted">Publishing is done by a publisher. You can see here what is still missing.</p>}
+      {canPublish && !confirming && (
+        <button className="primary" disabled={busy || !readiness?.ready} onClick={() => setConfirming(true)}>Publish...</button>
+      )}
+      {canPublish && confirming && (
+        <div className="notebox">
+          <p>The opportunity will be checked again right now. It goes live only if it is still open.</p>
+          <div className="row">
+            <button className="primary" disabled={busy} onClick={() => { onPublish(); setConfirming(false); }}>{busy ? 'Checking...' : 'Check and publish'}</button>
+            <button onClick={() => setConfirming(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

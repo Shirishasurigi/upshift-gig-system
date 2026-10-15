@@ -13,6 +13,18 @@ import history from './fixtures/history.json';
 import sources from './fixtures/sources.json';
 import runs from './fixtures/runs.json';
 import runErrors from './fixtures/run_errors.json';
+import readinessBlocked from './fixtures/readiness_blocked.json';
+import readinessReady from './fixtures/readiness_ready.json';
+import publishOk from './fixtures/publish_ok.json';
+import publishStale from './fixtures/publish_stale.json';
+import publications from './fixtures/publications.json';
+import notifications from './fixtures/notifications.json';
+import csvDry from './fixtures/csv_dry_run.json';
+import csvImport from './fixtures/csv_import_result.json';
+import csvRejected from './fixtures/csv_rejected.json';
+import csvJobs from './fixtures/csv_jobs.json';
+import csvJobDetail from './fixtures/csv_job_detail.json';
+import csvMeta from './fixtures/csv_meta.json';
 
 // These JSON files are real answers recorded from the running API, so the screens are tested against the true shapes.
 type Handler = (body: any) => { status?: number; body: unknown };
@@ -27,6 +39,11 @@ function installFetch(overrides: Record<string, Handler> = {}, who: unknown = me
     'GET /api/v1/gigs/1/classifications': () => ({ body: classifications }),
     'GET /api/v1/gigs/1/duplicates': () => ({ body: duplicates }),
     'GET /api/v1/gigs/1/history': () => ({ body: history }),
+    'GET /api/v1/gigs/1/publish-readiness': () => ({ body: readinessBlocked }),
+    'GET /api/v1/publications?': () => ({ body: publications }),
+    'GET /api/v1/notifications?': () => ({ body: notifications }),
+    'GET /api/v1/csv/jobs': () => ({ body: csvJobs }),
+    [`GET /api/v1/csv/jobs/${(csvMeta as any).badId}`]: () => ({ body: csvJobDetail }),
     'GET /api/v1/sources': () => ({ body: sources }),
     'GET /api/v1/discovery/runs?': () => ({ body: runs }),
     'GET /api/v1/discovery/runs/1/errors': () => ({ body: runErrors }),
@@ -35,7 +52,7 @@ function installFetch(overrides: Record<string, Handler> = {}, who: unknown = me
   calls = [];
   vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
     const method = init?.method ?? 'GET';
-    const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+    const body = init?.body instanceof FormData ? { file: (init.body.get('file') as File).name } : init?.body ? JSON.parse(String(init.body)) : undefined;
     calls.push({ method, url, body });
     const key = Object.keys(routes).sort((a, b) => b.length - a.length).find((k) => `${method} ${url}` === k || (k.endsWith('?') && `${method} ${url}`.startsWith(k)));
     const r = key ? routes[key](body) : { status: 404, body: { error: { code: 'NOT_FOUND', message: `no mock for ${method} ${url}` } } };
@@ -202,6 +219,191 @@ describe('sources and runs', () => {
     const row = (await screen.findByText(`#${bad.id}`)).closest('tr') as HTMLElement;
     await userEvent.click(within(row).getByRole('button', { name: 'Why?' }));
     const first = (runErrors as any).data[0];
+    expect(await screen.findByText(first.message, { exact: false })).toBeInTheDocument();
+  });
+});
+
+
+const PUBLISHER = { id: 3, role: 'publisher', name: 'Paul Publisher' };
+const ADMIN = { id: 1, role: 'admin', name: 'Admin' };
+
+describe('publishing', () => {
+  it('shows what is still missing and keeps Publish disabled for an unapproved gig', async () => {
+    installFetch({}, PUBLISHER); renderApp('/gigs/1');
+    await screen.findByRole('heading', { name: G.title });
+    const missing = (readinessBlocked as any).checks.find((c: any) => c.blocking && !c.ok);
+    expect(await screen.findByText(missing.message, { exact: false })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /publish\.\.\./i })).toBeDisabled();
+  });
+
+  it('only a publisher can publish: a reviewer sees the checklist but no Publish button', async () => {
+    installFetch({ 'GET /api/v1/gigs/1/publish-readiness': () => ({ body: readinessReady }) }); renderApp('/gigs/1');
+    await screen.findByRole('heading', { name: G.title });
+    expect(await screen.findByText(/Publishing is done by a publisher/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /publish\.\.\./i })).not.toBeInTheDocument();
+  });
+
+  it('publishes after an explicit confirmation and reports the delivery of each notification', async () => {
+    installFetch({
+      'GET /api/v1/gigs/1/publish-readiness': () => ({ body: readinessReady }),
+      'POST /api/v1/gigs/1/publish': () => ({ status: 201, body: publishOk }),
+    }, PUBLISHER);
+    renderApp('/gigs/1');
+    await screen.findByRole('heading', { name: G.title });
+    await userEvent.click(await screen.findByRole('button', { name: /publish\.\.\./i }));
+    expect(screen.getByText(/checked again right now/i)).toBeInTheDocument();
+    expect(calls.some((c) => c.url.endsWith('/publish'))).toBe(false); // nothing sent before confirming
+    await userEvent.click(screen.getByRole('button', { name: /check and publish/i }));
+    const banner = await screen.findByRole('status');
+    expect(banner).toHaveTextContent('Published.');
+    for (const n of (publishOk as any).notifications) expect(banner).toHaveTextContent(n.status);
+    expect(calls.find((c) => c.method === 'POST' && c.url.endsWith('/publish'))).toBeTruthy();
+  });
+
+  it('shows the reason in plain words when the final check blocks publishing', async () => {
+    installFetch({
+      'GET /api/v1/gigs/1/publish-readiness': () => ({ body: readinessReady }),
+      'POST /api/v1/gigs/1/publish': () => ({ status: 409, body: publishStale }),
+    }, PUBLISHER);
+    renderApp('/gigs/1');
+    await screen.findByRole('heading', { name: G.title });
+    await userEvent.click(await screen.findByRole('button', { name: /publish\.\.\./i }));
+    await userEvent.click(screen.getByRole('button', { name: /check and publish/i }));
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('no longer confirmed open');
+    expect(alert).toHaveTextContent('Review Pending');
+  });
+
+  it('requires a reason to unpublish and sends it', async () => {
+    installFetch({
+      'GET /api/v1/gigs/1': () => ({ body: { ...G, workflow_state: 'published' } }),
+      'POST /api/v1/gigs/1/unpublish': () => ({ body: { gigId: 1, workflowState: 'unpublished', notifications: [] } }),
+    }, PUBLISHER);
+    renderApp('/gigs/1');
+    await screen.findByText(/This gig is live/i);
+    expect(screen.getByLabelText(/reason \(required\)/i)).toBeRequired();
+    await userEvent.type(screen.getByLabelText(/reason \(required\)/i), 'client withdrew');
+    await userEvent.click(screen.getByRole('button', { name: 'Unpublish' }));
+    await waitFor(() => expect(calls.find((c) => c.url.endsWith('/unpublish'))?.body).toEqual({ reason: 'client withdrew' }));
+  });
+
+  it('lists publications, including blocked attempts and automatic take-downs', async () => {
+    installFetch({}, ADMIN); renderApp('/publications');
+    const failed = (publications as any).data.find((p: any) => p.status === 'failed');
+    expect((await screen.findAllByText(failed.failure_reason, { exact: false })).length).toBeGreaterThan(0);
+    const auto = (publications as any).data.find((p: any) => p.status === 'unpublished' && !p.unpublished_by);
+    if (auto) expect(screen.getAllByText('automatic').length).toBeGreaterThan(0);
+  });
+
+  it('lets an admin run the health check and shows the result', async () => {
+    installFetch({ 'POST /api/v1/health/sweep': () => ({ body: { checked: 3, unpublished: 1, failures: [], changes: [] } }) }, ADMIN);
+    renderApp('/publications');
+    await userEvent.click(await screen.findByRole('button', { name: /run health check now/i }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Checked 3 published gigs. Taken offline: 1.');
+  });
+
+  it('shows failed deliveries and lets only an admin retry them', async () => {
+    const failed = (notifications as any).data.find((n: any) => n.status === 'failed');
+    installFetch({ [`POST /api/v1/notifications/${failed.id}/retry`]: () => ({ body: { result: [{ id: failed.id, status: 'sent' }] } }) }, ADMIN);
+    renderApp('/notifications');
+    const row = (await screen.findByText(failed.last_error, { exact: false })).closest('tr') as HTMLElement;
+    await userEvent.click(within(row).getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(calls.some((c) => c.url.endsWith(`/notifications/${failed.id}/retry`))).toBe(true));
+  });
+
+  it('a reviewer sees failed notifications but has no Retry button', async () => {
+    installFetch(); renderApp('/notifications');
+    const failed = (notifications as any).data.find((n: any) => n.status === 'failed');
+    await screen.findByText(failed.last_error, { exact: false });
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  });
+});
+
+
+describe('csv import / export', () => {
+  const file = () => new File(['external_gig_id,title\n'], 'gigs.csv', { type: 'text/csv' });
+  const hrefOf = (name: RegExp) => (screen.getByRole('link', { name }) as HTMLAnchorElement).getAttribute('href') ?? '';
+
+  it('builds the export link from the chosen scope and module, and offers the blank template', async () => {
+    installFetch(); renderApp('/csv');
+    await screen.findByRole('heading', { name: /csv import/i });
+    expect(hrefOf(/download csv/i)).toContain('scope=approved');
+    await userEvent.selectOptions(screen.getByLabelText(/which gigs/i), 'published');
+    await userEvent.selectOptions(screen.getByLabelText(/^module$/i), 'M5');
+    const href = hrefOf(/download csv/i);
+    expect(href).toContain('scope=published'); expect(href).toContain('track=M5'); expect(href).toContain('bom=true');
+    expect(hrefOf(/blank template/i)).toContain('/api/v1/csv/template');
+  });
+
+  it('offers "everything" only to an admin', async () => {
+    installFetch({}, ADMIN); const first = renderApp('/csv');
+    await screen.findByRole('heading', { name: /csv import/i });
+    expect(within(screen.getByLabelText(/which gigs/i)).getByRole('option', { name: /everything/i })).toBeInTheDocument();
+    first.unmount();
+    installFetch(); renderApp('/csv');
+    await screen.findByRole('heading', { name: /csv import/i });
+    expect(within(screen.getByLabelText(/which gigs/i)).queryByRole('option', { name: /everything/i })).not.toBeInTheDocument();
+  });
+
+  it('hides the import box from a publisher but still lets them export', async () => {
+    installFetch({}, PUBLISHER); renderApp('/csv');
+    await screen.findByRole('heading', { name: /csv import/i });
+    expect(screen.queryByText(/check file/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /download csv/i })).toBeInTheDocument();
+  });
+
+  it('forces a check before importing, shows what is wrong, then imports', async () => {
+    installFetch({
+      'POST /api/v1/csv/import?dryRun=true': () => ({ body: csvDry }),
+      'POST /api/v1/csv/import': () => ({ body: { ...(csvImport as any), created: 4, processing: 'started', counts: { ...(csvImport as any).counts, created: 4 } } }),
+    });
+    renderApp('/csv');
+    await screen.findByRole('heading', { name: /csv import/i });
+    const importBtn = screen.getByRole('button', { name: 'Import' });
+    expect(importBtn).toBeDisabled();
+    await userEvent.upload(screen.getByLabelText(/csv file/i), file());
+    expect(importBtn).toBeDisabled(); // choosing a file is not enough: it must be checked first
+    await userEvent.click(screen.getByRole('button', { name: /check file/i }));
+    expect(await screen.findByText(/Nothing was saved/i)).toBeInTheDocument();
+    const firstError = (csvDry as any).errors.find((e: any) => e.severity === 'error');
+    expect(screen.getByText(firstError.message, { exact: false })).toBeInTheDocument();
+    expect(calls.find((c) => c.url.includes('dryRun=true'))?.body).toEqual({ file: 'gigs.csv' });
+    expect(importBtn).toBeEnabled();
+    await userEvent.click(importBtn);
+    expect(await screen.findByText(/Import finished/i)).toBeInTheDocument();
+    expect(screen.getByText(/sorted into modules and checked in the background/i)).toBeInTheDocument();
+    expect(calls.filter((c) => c.method === 'POST' && c.url === '/api/v1/csv/import')).toHaveLength(1);
+  });
+
+  it('requires a new check when a different file is chosen', async () => {
+    installFetch({ 'POST /api/v1/csv/import?dryRun=true': () => ({ body: csvDry }) });
+    renderApp('/csv');
+    await screen.findByRole('heading', { name: /csv import/i });
+    const input = screen.getByLabelText(/csv file/i);
+    await userEvent.upload(input, file());
+    await userEvent.click(screen.getByRole('button', { name: /check file/i }));
+    await screen.findByText(/Nothing was saved/i);
+    expect(screen.getByRole('button', { name: 'Import' })).toBeEnabled();
+    await userEvent.upload(input, new File(['other\n'], 'other.csv', { type: 'text/csv' }));
+    expect(screen.getByRole('button', { name: 'Import' })).toBeDisabled();
+  });
+
+  it('shows the server\'s plain-language reason when a file is refused', async () => {
+    installFetch({ 'POST /api/v1/csv/import?dryRun=true': () => ({ status: 422, body: csvRejected }) });
+    renderApp('/csv');
+    await screen.findByRole('heading', { name: /csv import/i });
+    await userEvent.upload(screen.getByLabelText(/csv file/i), file());
+    await userEvent.click(screen.getByRole('button', { name: /check file/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('CSV is missing columns');
+    expect(screen.getByRole('button', { name: 'Import' })).toBeDisabled();
+  });
+
+  it('lists recent files and shows the problems of a file with rejected rows', async () => {
+    installFetch(); renderApp('/csv');
+    const bad = (csvJobs as any).data.find((j: any) => j.id === (csvMeta as any).badId);
+    const row = (await screen.findAllByText(bad.file_name)).map((e) => e.closest('tr') as HTMLElement).find((r) => within(r).queryByRole('button', { name: 'Problems' }))!;
+    await userEvent.click(within(row).getByRole('button', { name: 'Problems' }));
+    const first = (csvJobDetail as any).error_report.find((e: any) => e.severity === 'error');
     expect(await screen.findByText(first.message, { exact: false })).toBeInTheDocument();
   });
 });

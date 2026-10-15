@@ -1,0 +1,550 @@
+{
+ "data": [
+  {
+   "id": 23,
+   "gig_id": 10,
+   "gig_title": "Full-Stack Web Developer",
+   "audience": "admins",
+   "type": "publish_failed",
+   "channel": "in_app",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 10,
+    "title": "Full-Stack Web Developer",
+    "reason": "The opportunity is no longer confirmed open (stopped): The page says the opportunity is closed"
+   },
+   "created_at": "2026-10-15 01:27:07.479",
+   "sent_at": "2026-10-15 01:27:07.483"
+  },
+  {
+   "id": 22,
+   "gig_id": 9,
+   "gig_title": "RLHF Reviewer (Coding Tasks)",
+   "audience": "learners",
+   "type": "published",
+   "channel": "in_app",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 9,
+    "title": "RLHF Reviewer (Coding Tasks)",
+    "track": "M3",
+    "postedAt": "2026-10-02",
+    "moduleName": "AI Data Annotation / Evaluation",
+    "publicPath": "/opportunities/9",
+    "publishedBy": 3,
+    "externalGigId": "GIG-DA-203",
+    "paymentAmount": "$40 - $60 / hr"
+   },
+   "created_at": "2026-10-15 01:27:07.338",
+   "sent_at": "2026-10-15 01:27:07.349"
+  },
+  {
+   "id": 21,
+   "gig_id": 9,
+   "gig_title": "RLHF Reviewer (Coding Tasks)",
+   "audience": "site",
+   "type": "published",
+   "channel": "webhook",
+   "status": "skipped",
+   "attempts": 0,
+   "last_error": "No website refresh address configured (WEBSITE_REVALIDATE_URL)",
+   "payload": {
+    "gigId": 9,
+    "paths": [
+     "/opportunities",
+     "/opportunities/9"
+    ],
+    "title": "RLHF Reviewer (Coding Tasks)",
+    "track": "M3",
+    "postedAt": "2026-10-02",
+    "moduleName": "AI Data Annotation / Evaluation",
+    "publicPath": "/opportunities/9",
+    "publishedBy": 3,
+    "externalGigId": "GIG-DA-203",
+    "paymentAmount": "$40 - $60 / hr"
+   },
+   "created_at": "2026-10-15 01:27:07.336",
+   "sent_at": null
+  },
+  {
+   "id": 20,
+   "gig_id": 19,
+   "gig_title": "Freelance Video Editor (no posted date)",
+   "audience": "learners",
+   "type": "published",
+   "channel": "in_app",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 19,
+    "title": "Freelance Video Editor (no posted date)",
+    "track": "M1",
+    "postedAt": null,
+    "moduleName": "AI Video / Reels",
+    "publicPath": "/opportunities/19",
+    "publishedBy": 3,
+    "externalGigId": "GIG-ED-601",
+    "paymentAmount": "$28 / hr"
+   },
+   "created_at": "2026-10-15 01:26:02.955",
+   "sent_at": "2026-10-15 01:26:02.964"
+  },
+  {
+   "id": 19,
+   "gig_id": 19,
+   "gig_title": "Freelance Video Editor (no posted date)",
+   "audience": "site",
+   "type": "published",
+   "channel": "webhook",
+   "status": "skipped",
+   "attempts": 0,
+   "last_error": "No website refresh address configured (WEBSITE_REVALIDATE_URL)",
+   "payload": {
+    "gigId": 19,
+    "paths": [
+     "/opportunities",
+     "/opportunities/19"
+    ],
+    "title": "Freelance Video Editor (no posted date)",
+    "track": "M1",
+    "postedAt": null,
+    "moduleName": "AI Video / Reels",
+    "publicPath": "/opportunities/19",
+    "publishedBy": 3,
+    "externalGigId": "GIG-ED-601",
+    "paymentAmount": "$28 / hr"
+   },
+   "created_at": "2026-10-15 01:26:02.954",
+   "sent_at": null
+  },
+  {
+   "id": 18,
+   "gig_id": 15,
+   "gig_title": "Email Campaign Copywriter",
+   "audience": "learners",
+   "type": "published",
+   "channel": "webhook",
+   "status": "sent",
+   "attempts": 2,
+   "last_error": null,
+   "payload": {
+    "gigId": 15,
+    "title": "Email Campaign Copywriter",
+    "track": "M5",
+    "postedAt": "2026-10-04",
+    "moduleName": "AI Marketing / Growth",
+    "publicPath": "/opportunities/15",
+    "publishedBy": 3,
+    "externalGigId": "GIG-MK-403",
+    "paymentAmount": "$35 / hr"
+   },
+   "created_at": "2026-10-15 01:25:58.171",
+   "sent_at": "2026-10-15 01:25:58.209"
+  },
+  {
+   "id": 17,
+   "gig_id": 15,
+   "gig_title": "Email Campaign Copywriter",
+   "audience": "site",
+   "type": "published",
+   "channel": "webhook",
+   "status": "failed",
+   "attempts": 1,
+   "last_error": "Receiver answered HTTP 500",
+   "payload": {
+    "gigId": 15,
+    "paths": [
+     "/opportunities",
+     "/opportunities/15"
+    ],
+    "title": "Email Campaign Copywriter",
+    "track": "M5",
+    "postedAt": "2026-10-04",
+    "moduleName": "AI Marketing / Growth",
+    "publicPath": "/opportunities/15",
+    "publishedBy": 3,
+    "externalGigId": "GIG-MK-403",
+    "paymentAmount": "$35 / hr"
+   },
+   "created_at": "2026-10-15 01:25:58.170",
+   "sent_at": null
+  },
+  {
+   "id": 16,
+   "gig_id": 14,
+   "gig_title": "Social Media Growth Manager",
+   "audience": "admins",
+   "type": "gig_status_changed",
+   "channel": "in_app",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "now": "paused",
+    "was": "active",
+    "gigId": 14,
+    "reason": "The page says applications are paused"
+   },
+   "created_at": "2026-10-15 01:25:57.900",
+   "sent_at": "2026-10-15 01:25:57.902"
+  },
+  {
+   "id": 15,
+   "gig_id": 7,
+   "gig_title": "AI Response Evaluator",
+   "audience": "admins",
+   "type": "gig_status_changed",
+   "channel": "in_app",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 7,
+    "title": "AI Response Evaluator",
+    "reason": "Closed (found by a scheduled_health check): The page says the opportunity is closed",
+    "automatic": true,
+    "externalGigId": "GIG-DA-201"
+   },
+   "created_at": "2026-10-15 01:25:54.708",
+   "sent_at": "2026-10-15 01:25:54.714"
+  },
+  {
+   "id": 14,
+   "gig_id": 7,
+   "gig_title": "AI Response Evaluator",
+   "audience": "site",
+   "type": "unpublished",
+   "channel": "webhook",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 7,
+    "paths": [
+     "/opportunities",
+     "/opportunities/7"
+    ],
+    "title": "AI Response Evaluator",
+    "reason": "Closed (found by a scheduled_health check): The page says the opportunity is closed",
+    "automatic": true,
+    "externalGigId": "GIG-DA-201"
+   },
+   "created_at": "2026-10-15 01:25:54.708",
+   "sent_at": "2026-10-15 01:25:54.713"
+  },
+  {
+   "id": 13,
+   "gig_id": 3,
+   "gig_title": "AI Video Prompt Specialist",
+   "audience": "admins",
+   "type": "unpublished",
+   "channel": "in_app",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 3,
+    "title": "AI Video Prompt Specialist",
+    "reason": "client withdrew the offer",
+    "automatic": false,
+    "externalGigId": "GIG-RR-103"
+   },
+   "created_at": "2026-10-15 01:25:54.651",
+   "sent_at": "2026-10-15 01:25:54.658"
+  },
+  {
+   "id": 12,
+   "gig_id": 3,
+   "gig_title": "AI Video Prompt Specialist",
+   "audience": "site",
+   "type": "unpublished",
+   "channel": "webhook",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 3,
+    "paths": [
+     "/opportunities",
+     "/opportunities/3"
+    ],
+    "title": "AI Video Prompt Specialist",
+    "reason": "client withdrew the offer",
+    "automatic": false,
+    "externalGigId": "GIG-RR-103"
+   },
+   "created_at": "2026-10-15 01:25:54.650",
+   "sent_at": "2026-10-15 01:25:54.656"
+  },
+  {
+   "id": 11,
+   "gig_id": 16,
+   "gig_title": "n8n Workflow Automation Builder",
+   "audience": "learners",
+   "type": "published",
+   "channel": "webhook",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 16,
+    "title": "n8n Workflow Automation Builder",
+    "track": "M6",
+    "postedAt": "2026-09-24",
+    "moduleName": "AI Automation / Agents",
+    "publicPath": "/opportunities/16",
+    "publishedBy": 3,
+    "externalGigId": "GIG-AU-501",
+    "paymentAmount": "$65 / hr"
+   },
+   "created_at": "2026-10-15 01:25:54.590",
+   "sent_at": "2026-10-15 01:25:54.600"
+  },
+  {
+   "id": 10,
+   "gig_id": 16,
+   "gig_title": "n8n Workflow Automation Builder",
+   "audience": "site",
+   "type": "published",
+   "channel": "webhook",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 16,
+    "paths": [
+     "/opportunities",
+     "/opportunities/16"
+    ],
+    "title": "n8n Workflow Automation Builder",
+    "track": "M6",
+    "postedAt": "2026-09-24",
+    "moduleName": "AI Automation / Agents",
+    "publicPath": "/opportunities/16",
+    "publishedBy": 3,
+    "externalGigId": "GIG-AU-501",
+    "paymentAmount": "$65 / hr"
+   },
+   "created_at": "2026-10-15 01:25:54.589",
+   "sent_at": "2026-10-15 01:25:54.595"
+  },
+  {
+   "id": 9,
+   "gig_id": 14,
+   "gig_title": "Social Media Growth Manager",
+   "audience": "learners",
+   "type": "published",
+   "channel": "webhook",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 14,
+    "title": "Social Media Growth Manager",
+    "track": "M5",
+    "postedAt": "2026-09-30",
+    "moduleName": "AI Marketing / Growth",
+    "publicPath": "/opportunities/14",
+    "publishedBy": 3,
+    "externalGigId": "GIG-MK-402",
+    "paymentAmount": "$900 fixed"
+   },
+   "created_at": "2026-10-15 01:25:54.478",
+   "sent_at": "2026-10-15 01:25:54.488"
+  },
+  {
+   "id": 8,
+   "gig_id": 14,
+   "gig_title": "Social Media Growth Manager",
+   "audience": "site",
+   "type": "published",
+   "channel": "webhook",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 14,
+    "paths": [
+     "/opportunities",
+     "/opportunities/14"
+    ],
+    "title": "Social Media Growth Manager",
+    "track": "M5",
+    "postedAt": "2026-09-30",
+    "moduleName": "AI Marketing / Growth",
+    "publicPath": "/opportunities/14",
+    "publishedBy": 3,
+    "externalGigId": "GIG-MK-402",
+    "paymentAmount": "$900 fixed"
+   },
+   "created_at": "2026-10-15 01:25:54.478",
+   "sent_at": "2026-10-15 01:25:54.483"
+  },
+  {
+   "id": 7,
+   "gig_id": 18,
+   "gig_title": "Zapier Integration Specialist",
+   "audience": "admins",
+   "type": "publish_failed",
+   "channel": "in_app",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 18,
+    "title": "Zapier Integration Specialist",
+    "reason": "The opportunity is no longer confirmed open (needs_review): The page gives no clear sign of whether applications are open"
+   },
+   "created_at": "2026-10-15 01:25:54.369",
+   "sent_at": "2026-10-15 01:25:54.371"
+  },
+  {
+   "id": 6,
+   "gig_id": 12,
+   "gig_title": "AI-Assisted Python Developer",
+   "audience": "admins",
+   "type": "publish_failed",
+   "channel": "in_app",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 12,
+    "title": "AI-Assisted Python Developer",
+    "reason": "The opportunity is no longer confirmed open (paused): The page says applications are paused"
+   },
+   "created_at": "2026-10-15 01:25:54.268",
+   "sent_at": "2026-10-15 01:25:54.270"
+  },
+  {
+   "id": 5,
+   "gig_id": 7,
+   "gig_title": "AI Response Evaluator",
+   "audience": "learners",
+   "type": "published",
+   "channel": "webhook",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 7,
+    "title": "AI Response Evaluator",
+    "track": "M3",
+    "postedAt": "2026-09-20",
+    "moduleName": "AI Data Annotation / Evaluation",
+    "publicPath": "/opportunities/7",
+    "publishedBy": 3,
+    "externalGigId": "GIG-DA-201",
+    "paymentAmount": "$25 / hr"
+   },
+   "created_at": "2026-10-15 01:25:54.170",
+   "sent_at": "2026-10-15 01:25:54.182"
+  },
+  {
+   "id": 4,
+   "gig_id": 7,
+   "gig_title": "AI Response Evaluator",
+   "audience": "site",
+   "type": "published",
+   "channel": "webhook",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 7,
+    "paths": [
+     "/opportunities",
+     "/opportunities/7"
+    ],
+    "title": "AI Response Evaluator",
+    "track": "M3",
+    "postedAt": "2026-09-20",
+    "moduleName": "AI Data Annotation / Evaluation",
+    "publicPath": "/opportunities/7",
+    "publishedBy": 3,
+    "externalGigId": "GIG-DA-201",
+    "paymentAmount": "$25 / hr"
+   },
+   "created_at": "2026-10-15 01:25:54.169",
+   "sent_at": "2026-10-15 01:25:54.177"
+  },
+  {
+   "id": 3,
+   "gig_id": 2,
+   "gig_title": "Short-Form Video Editor",
+   "audience": "admins",
+   "type": "publish_failed",
+   "channel": "in_app",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 2,
+    "title": "Short-Form Video Editor",
+    "reason": "The opportunity is no longer confirmed open (stopped): The page says the opportunity is closed"
+   },
+   "created_at": "2026-10-15 01:25:54.071",
+   "sent_at": "2026-10-15 01:25:54.072"
+  },
+  {
+   "id": 2,
+   "gig_id": 3,
+   "gig_title": "AI Video Prompt Specialist",
+   "audience": "learners",
+   "type": "published",
+   "channel": "webhook",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 3,
+    "title": "AI Video Prompt Specialist",
+    "track": "M1",
+    "postedAt": "2026-10-01",
+    "moduleName": "AI Video / Reels",
+    "publicPath": "/opportunities/3",
+    "publishedBy": 3,
+    "externalGigId": "GIG-RR-103",
+    "paymentAmount": "$500 fixed"
+   },
+   "created_at": "2026-10-15 01:25:53.886",
+   "sent_at": "2026-10-15 01:25:53.920"
+  },
+  {
+   "id": 1,
+   "gig_id": 3,
+   "gig_title": "AI Video Prompt Specialist",
+   "audience": "site",
+   "type": "published",
+   "channel": "webhook",
+   "status": "sent",
+   "attempts": 1,
+   "last_error": null,
+   "payload": {
+    "gigId": 3,
+    "paths": [
+     "/opportunities",
+     "/opportunities/3"
+    ],
+    "title": "AI Video Prompt Specialist",
+    "track": "M1",
+    "postedAt": "2026-10-01",
+    "moduleName": "AI Video / Reels",
+    "publicPath": "/opportunities/3",
+    "publishedBy": 3,
+    "externalGigId": "GIG-RR-103",
+    "paymentAmount": "$500 fixed"
+   },
+   "created_at": "2026-10-15 01:25:53.882",
+   "sent_at": "2026-10-15 01:25:53.906"
+  }
+ ],
+ "page": 1,
+ "pageSize": 50,
+ "total": 23
+}

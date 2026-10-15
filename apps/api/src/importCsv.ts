@@ -21,7 +21,12 @@ const TRACKS = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6'];
 type Issue = { row: number; severity: 'error' | 'warning'; field: string; message: string };
 
 // Turn one CSV row into a clean record, or a list of errors. Nothing is guessed.
-function buildRecord(raw: Record<string, string>, rowNo: number) {
+// On export, cells that start with = + - @ get a leading apostrophe so spreadsheets cannot run them as formulas.
+// On import that single apostrophe is removed again, so a file survives a round trip unchanged.
+const unguard = (v: string | undefined) => (typeof v === 'string' && /^'[=+\-@\t\r]/.test(v) ? v.slice(1) : v);
+
+function buildRecord(rawIn: Record<string, string>, rowNo: number) {
+  const raw: Record<string, string> = Object.fromEntries(Object.entries(rawIn).map(([k, v]) => [k, unguard(v) as string]));
   const issues: Issue[] = [];
   const err = (field: string, message: string) => issues.push({ row: rowNo, severity: 'error', field, message });
   const warn = (field: string, message: string) => issues.push({ row: rowNo, severity: 'warning', field, message });
@@ -237,17 +242,31 @@ async function handleKnownGig(
   }
 }
 
+export type ImportOptions = { dryRun?: boolean; maxRows?: number };
+
+// Reads a file from disk (used by the command line tools)
 export async function importCsv(filePath: string, sourceCode = 'SAMPLE_CSV', userId: number | null = null) {
-  const fileName = path.basename(filePath);
+  return importCsvText(await fs.readFile(filePath, 'utf8'), path.basename(filePath), sourceCode, userId);
+}
+
+// The importer. With dryRun it does exactly the same work, then undoes everything, so the answer is exactly what a real import would do.
+export async function importCsvText(text: string, fileName: string, sourceCode = 'SAMPLE_CSV', userId: number | null = null, opts: ImportOptions = {}) {
+  const dry = opts.dryRun === true;
   const [srcRows] = await pool.query('SELECT id, enablement FROM sources WHERE code = ?', [sourceCode]);
   const source = (srcRows as { id: number; enablement: string }[])[0];
   if (!source) throw new Error(`Source "${sourceCode}" does not exist`);
   if (source.enablement !== 'enabled') throw new Error(`Source "${sourceCode}" is not enabled`);
 
-  const [jobRes] = await pool.query(
+  // In a dry run every write happens inside one transaction that is rolled back at the end.
+  const root: PoolConnection | null = dry ? await pool.getConnection() : null;
+  if (root) await root.beginTransaction();
+  const db = root ?? pool;
+  const finishDry = async () => { if (root) { await root.rollback(); root.release(); } };
+
+  const [jobRes] = await db.query(
     "INSERT INTO csv_jobs (direction, file_name, status, requested_by) VALUES ('import', ?, 'running', ?)", [fileName, userId]);
   const jobId = (jobRes as { insertId: number }).insertId;
-  const [runRes] = await pool.query(
+  const [runRes] = await db.query(
     "INSERT INTO discovery_runs (source_id, trigger_type, status, started_at, initiated_by) VALUES (?, 'csv_import', 'running', NOW(3), ?)",
     [source.id, userId]);
   const runId = (runRes as { insertId: number }).insertId;
@@ -256,21 +275,25 @@ export async function importCsv(filePath: string, sourceCode = 'SAMPLE_CSV', use
   const notes: string[] = [];
 
   // Existing gigs, kept in memory to spot look-alikes (content similarity)
-  const [thr] = await pool.query("SELECT value FROM settings WHERE key_name = 'dedup.similarity_threshold'");
+  const [thr] = await db.query("SELECT value FROM settings WHERE key_name = 'dedup.similarity_threshold'");
   const threshold = Number((thr as { value: unknown }[])[0]?.value ?? 0.88);
-  const [known] = await pool.query('SELECT id, title, overview FROM gigs');
+  const [known] = await db.query('SELECT id, title, overview FROM gigs');
   const knownText: { id: number; text: GigText }[] = (known as { id: number; title: string | null; overview: string | null }[])
     .map((g) => ({ id: g.id, text: toGigText(g.title, g.overview) }));
   const issues: Issue[] = [];
 
   try {
-    const text = await fs.readFile(filePath, 'utf8');
-    const rows: Record<string, string>[] = parse(text, {
-      columns: true, bom: true, skip_empty_lines: true, relax_column_count: true, trim: false,
-    });
+    let rows: Record<string, string>[];
+    try {
+      rows = parse(text, { columns: true, bom: true, skip_empty_lines: true, relax_column_count: true, trim: false });
+    } catch (e) {
+      throw new Error(`This does not look like a valid CSV file (${(e as Error).message})`);
+    }
     const header = rows.length > 0 ? Object.keys(rows[0]) : [];
+    if (rows.length === 0) throw new Error('The file has no data rows');
     const missingCols = CSV_COLUMNS.filter((c) => !header.includes(c));
     if (missingCols.length > 0) throw new Error(`CSV is missing columns: ${missingCols.join(', ')}`);
+    if (opts.maxRows && rows.length > opts.maxRows) throw new Error(`Too many rows (${rows.length}); the limit is ${opts.maxRows} per file`);
 
     counts.total = rows.length;
     for (let i = 0; i < rows.length; i++) {
@@ -281,20 +304,21 @@ export async function importCsv(filePath: string, sourceCode = 'SAMPLE_CSV', use
       if (!record) { // invalid row: log it and carry on with the next one
         counts.failed++;
         for (const is of rowIssues.filter((x) => x.severity === 'error')) {
-          await pool.query(
+          await db.query(
             "INSERT INTO discovery_errors (run_id, source_id, stage, origin_url, error_code, message) VALUES (?, ?, 'normalize', ?, 'VALIDATION', ?)",
             [runId, source.id, (rows[i].origin_url ?? '').slice(0, 2000) || null, `Row ${rowNo} ${is.field}: ${is.message}`]);
         }
         continue;
       }
 
-      const conn = await pool.getConnection();
+      const conn = root ?? (await pool.getConnection());
+      const commit = async () => { if (!root) await conn.commit(); };
       try {
-        await conn.beginTransaction();
+        if (!root) await conn.beginTransaction();
         const match = await findExisting(conn, source.id, record);
         if (match) {
           await handleKnownGig(conn, runId, match, record, counts, notes, rowNo);
-          await conn.commit();
+          await commit();
           continue;
         }
         const [ins] = await conn.query(
@@ -312,8 +336,8 @@ export async function importCsv(filePath: string, sourceCode = 'SAMPLE_CSV', use
            JSON.stringify(record.missing_fields), record.data_completeness, record.content_fingerprint]);
         const gigId = (ins as { insertId: number }).insertId;
         await conn.query(
-          "INSERT INTO gig_versions (gig_id, version_no, change_origin, snapshot) VALUES (?, 1, 'csv_import', ?)",
-          [gigId, JSON.stringify(record)]);
+          "INSERT INTO gig_versions (gig_id, version_no, change_origin, changed_by, snapshot) VALUES (?, 1, 'csv_import', ?, ?)",
+          [gigId, userId, JSON.stringify(record)]);
         // Look-alike check: flag for a human, never merge automatically
         const mine = toGigText(record.title, record.overview);
         let best: { id: number; score: number } | null = null;
@@ -330,23 +354,24 @@ export async function importCsv(filePath: string, sourceCode = 'SAMPLE_CSV', use
           notes.push(`line ${rowNo}: new gig ${record.external_gig_id ?? gigId} looks ${(best.score * 100).toFixed(0)}% like gig #${best.id}. Flagged as suspected duplicate.`);
         }
         knownText.push({ id: gigId, text: mine });
-        await conn.commit();
+        await commit();
         counts.created++;
       } catch (e) {
-        await conn.rollback();
+        if (!root) await conn.rollback();
         if ((e as { code?: string }).code === 'ER_DUP_ENTRY') { counts.unchanged++; }
         else {
           counts.failed++;
           issues.push({ row: rowNo, severity: 'error', field: '-', message: (e as Error).message });
-          await pool.query(
+          await db.query(
             "INSERT INTO discovery_errors (run_id, source_id, stage, origin_url, error_code, message) VALUES (?, ?, 'persist', ?, 'DB_ERROR', ?)",
             [runId, source.id, record.origin_url.slice(0, 2000), `Row ${rowNo}: ${(e as Error).message}`.slice(0, 1000)]);
         }
       } finally {
-        conn.release();
+        if (!root) conn.release();
       }
     }
   } catch (e) {
+    if (dry) { await finishDry(); throw e; }
     // File-level failure (unreadable file, wrong columns): record it, do not touch existing gigs
     await pool.query("UPDATE discovery_runs SET status='failed', finished_at=NOW(3), error_summary=? WHERE id=?", [(e as Error).message, runId]);
     await pool.query("UPDATE csv_jobs SET status='failed', finished_at=NOW(3), error_report=? WHERE id=?",
@@ -359,6 +384,10 @@ export async function importCsv(filePath: string, sourceCode = 'SAMPLE_CSV', use
 
   const matched = counts.unchanged + counts.updated + counts.held + counts.conflict;
   const runStatus = counts.failed === 0 ? 'succeeded' : counts.created + matched > 0 ? 'partial' : 'failed';
+  if (dry) {
+    await finishDry(); // undo everything: nothing was saved
+    return { dryRun: true, runId: null, jobId: null, runStatus, counts, issues, notes };
+  }
   await pool.query(
     `UPDATE discovery_runs SET status=?, finished_at=NOW(3), found_count=?, created_count=?, updated_count=?, unchanged_count=?,
         duplicate_count=?, failed_count=? WHERE id=?`,
@@ -372,5 +401,5 @@ export async function importCsv(filePath: string, sourceCode = 'SAMPLE_CSV', use
     "INSERT INTO audit_log (entity_type, entity_id, action, actor_type, actor_user_id, details) VALUES ('discovery_run', ?, 'csv_import', ?, ?, ?)",
     [runId, userId ? 'user' : 'system', userId, JSON.stringify({ file: fileName, ...counts })]);
 
-  return { runId, jobId, runStatus, counts, issues, notes };
+  return { dryRun: false, runId, jobId, runStatus, counts, issues, notes };
 }

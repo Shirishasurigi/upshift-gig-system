@@ -6,6 +6,9 @@ import Queue from './pages/Queue';
 import GigDetail from './pages/GigDetail';
 import Sources from './pages/Sources';
 import Runs from './pages/Runs';
+import Publications from './pages/Publications';
+import Notifications from './pages/Notifications';
+import Csv from './pages/Csv';
 
 export default function App() {
   const qc = useQueryClient();
@@ -25,6 +28,9 @@ export default function App() {
         <h1>UpShift<span>Gig Review</span></h1>
         <nav>
           <NavLink to="/queue">Review queue</NavLink>
+          <NavLink to="/publications">Publications</NavLink>
+          <NavLink to="/notifications">Notifications</NavLink>
+          <NavLink to="/csv">CSV import / export</NavLink>
           <NavLink to="/runs">Discovery runs</NavLink>
           <NavLink to="/sources">Sources</NavLink>
         </nav>
@@ -39,6 +45,9 @@ export default function App() {
           <Route path="/" element={<Navigate to="/queue" replace />} />
           <Route path="/queue" element={<Queue />} />
           <Route path="/gigs/:id" element={<GigDetail me={me} />} />
+          <Route path="/publications" element={<Publications me={me} />} />
+          <Route path="/notifications" element={<Notifications me={me} />} />
+          <Route path="/csv" element={<Csv me={me} />} />
           <Route path="/runs" element={<Runs />} />
           <Route path="/sources" element={<Sources me={me} />} />
           <Route path="*" element={<p>Page not found.</p>} />

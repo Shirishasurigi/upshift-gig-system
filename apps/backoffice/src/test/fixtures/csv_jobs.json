@@ -1,0 +1,269 @@
+{
+ "data": [
+  {
+   "id": 23,
+   "direction": "import",
+   "file_name": "sample_gigs_unclassified.csv",
+   "status": "completed",
+   "total_rows": 4,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 4,
+   "failed_rows": 0,
+   "filter_criteria": null,
+   "requested_by": "Rita Reviewer",
+   "created_at": "2026-10-15 11:14:27.636",
+   "finished_at": "2026-10-15 11:14:27.715"
+  },
+  {
+   "id": 20,
+   "direction": "export",
+   "file_name": "export_published.csv",
+   "status": "completed",
+   "total_rows": 1,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 0,
+   "failed_rows": 0,
+   "filter_criteria": {
+    "scope": "published",
+    "track": null,
+    "sourceId": null
+   },
+   "requested_by": "Paul Publisher",
+   "created_at": "2026-10-15 06:19:55.858",
+   "finished_at": "2026-10-15 06:19:55.858"
+  },
+  {
+   "id": 17,
+   "direction": "import",
+   "file_name": "mixed.csv",
+   "status": "completed_with_errors",
+   "total_rows": 26,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 24,
+   "failed_rows": 2,
+   "filter_criteria": null,
+   "requested_by": "Rita Reviewer",
+   "created_at": "2026-10-15 06:19:55.616",
+   "finished_at": "2026-10-15 06:19:55.727"
+  },
+  {
+   "id": 15,
+   "direction": "import",
+   "file_name": "new.csv",
+   "status": "completed",
+   "total_rows": 4,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 4,
+   "failed_rows": 0,
+   "filter_criteria": null,
+   "requested_by": "Rita Reviewer",
+   "created_at": "2026-10-15 06:19:55.505",
+   "finished_at": "2026-10-15 06:19:55.525"
+  },
+  {
+   "id": 14,
+   "direction": "import",
+   "file_name": "new.csv",
+   "status": "completed",
+   "total_rows": 4,
+   "created_rows": 4,
+   "updated_rows": 0,
+   "skipped_rows": 0,
+   "failed_rows": 0,
+   "filter_criteria": null,
+   "requested_by": "Rita Reviewer",
+   "created_at": "2026-10-15 06:19:54.386",
+   "finished_at": "2026-10-15 06:19:54.441"
+  },
+  {
+   "id": 11,
+   "direction": "export",
+   "file_name": "export_all.csv",
+   "status": "completed",
+   "total_rows": 22,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 0,
+   "failed_rows": 0,
+   "filter_criteria": {
+    "scope": "all",
+    "track": null,
+    "sourceId": null
+   },
+   "requested_by": "Admin",
+   "created_at": "2026-10-15 06:19:54.170",
+   "finished_at": "2026-10-15 06:19:54.170"
+  },
+  {
+   "id": 10,
+   "direction": "export",
+   "file_name": "export_all.csv",
+   "status": "completed",
+   "total_rows": 22,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 0,
+   "failed_rows": 0,
+   "filter_criteria": {
+    "scope": "all",
+    "track": null,
+    "sourceId": null
+   },
+   "requested_by": "Admin",
+   "created_at": "2026-10-15 06:19:54.165",
+   "finished_at": "2026-10-15 06:19:54.165"
+  },
+  {
+   "id": 8,
+   "direction": "export",
+   "file_name": "export_all.csv",
+   "status": "completed",
+   "total_rows": 22,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 0,
+   "failed_rows": 0,
+   "filter_criteria": {
+    "scope": "all",
+    "track": null,
+    "sourceId": null
+   },
+   "requested_by": "Admin",
+   "created_at": "2026-10-15 06:19:54.048",
+   "finished_at": "2026-10-15 06:19:54.048"
+  },
+  {
+   "id": 7,
+   "direction": "export",
+   "file_name": "export_approved.csv",
+   "status": "completed",
+   "total_rows": 3,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 0,
+   "failed_rows": 0,
+   "filter_criteria": {
+    "scope": "approved",
+    "track": null,
+    "sourceId": null
+   },
+   "requested_by": "Rita Reviewer",
+   "created_at": "2026-10-15 06:19:54.036",
+   "finished_at": "2026-10-15 06:19:54.036"
+  },
+  {
+   "id": 6,
+   "direction": "export",
+   "file_name": "export_approved.csv",
+   "status": "completed",
+   "total_rows": 3,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 0,
+   "failed_rows": 0,
+   "filter_criteria": {
+    "scope": "approved",
+    "track": null,
+    "sourceId": null
+   },
+   "requested_by": "Rita Reviewer",
+   "created_at": "2026-10-15 06:19:54.032",
+   "finished_at": "2026-10-15 06:19:54.032"
+  },
+  {
+   "id": 5,
+   "direction": "export",
+   "file_name": "export_approved.csv",
+   "status": "completed",
+   "total_rows": 1,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 0,
+   "failed_rows": 0,
+   "filter_criteria": {
+    "scope": "approved",
+    "track": "M5",
+    "sourceId": null
+   },
+   "requested_by": "Rita Reviewer",
+   "created_at": "2026-10-15 06:19:54.019",
+   "finished_at": "2026-10-15 06:19:54.019"
+  },
+  {
+   "id": 4,
+   "direction": "export",
+   "file_name": "export_published.csv",
+   "status": "completed",
+   "total_rows": 0,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 0,
+   "failed_rows": 0,
+   "filter_criteria": {
+    "scope": "published",
+    "track": null,
+    "sourceId": null
+   },
+   "requested_by": "Paul Publisher",
+   "created_at": "2026-10-15 06:19:54.016",
+   "finished_at": "2026-10-15 06:19:54.016"
+  },
+  {
+   "id": 3,
+   "direction": "export",
+   "file_name": "export_approved.csv",
+   "status": "completed",
+   "total_rows": 3,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 0,
+   "failed_rows": 0,
+   "filter_criteria": {
+    "scope": "approved",
+    "track": null,
+    "sourceId": null
+   },
+   "requested_by": "Paul Publisher",
+   "created_at": "2026-10-15 06:19:54.011",
+   "finished_at": "2026-10-15 06:19:54.011"
+  },
+  {
+   "id": 2,
+   "direction": "export",
+   "file_name": "export_approved.csv",
+   "status": "completed",
+   "total_rows": 0,
+   "created_rows": 0,
+   "updated_rows": 0,
+   "skipped_rows": 0,
+   "failed_rows": 0,
+   "filter_criteria": {
+    "scope": "approved",
+    "track": null,
+    "sourceId": null
+   },
+   "requested_by": "Rita Reviewer",
+   "created_at": "2026-10-15 06:19:53.955",
+   "finished_at": "2026-10-15 06:19:53.955"
+  },
+  {
+   "id": 1,
+   "direction": "import",
+   "file_name": "sample_gigs.csv",
+   "status": "completed_with_errors",
+   "total_rows": 26,
+   "created_rows": 22,
+   "updated_rows": 0,
+   "skipped_rows": 2,
+   "failed_rows": 2,
+   "filter_criteria": null,
+   "requested_by": null,
+   "created_at": "2026-10-15 06:19:40.706",
+   "finished_at": "2026-10-15 06:19:40.931"
+  }
+ ]
+}
