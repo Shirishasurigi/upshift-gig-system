@@ -1,0 +1,20 @@
+{
+ "data": [
+  {
+   "id": 1,
+   "stage": "normalize",
+   "origin_url": "http://localhost:4000/fixtures/gigs/GIG-BAD-801",
+   "error_code": "VALIDATION",
+   "message": "Row 26 min_amount: min_amount (80) is bigger than max_amount (40)",
+   "created_at": "2026-10-11 09:48:56.692"
+  },
+  {
+   "id": 2,
+   "stage": "normalize",
+   "origin_url": null,
+   "error_code": "VALIDATION",
+   "message": "Row 27 origin_url: origin_url is required",
+   "created_at": "2026-10-11 09:48:56.694"
+  }
+ ]
+}

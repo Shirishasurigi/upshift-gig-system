@@ -1,0 +1,71 @@
+{
+ "data": [
+  {
+   "id": 4,
+   "source_id": 1,
+   "source_code": "SAMPLE_CSV",
+   "trigger_type": "csv_import",
+   "status": "succeeded",
+   "started_at": "2026-10-11 09:49:17.131",
+   "finished_at": "2026-10-11 09:49:17.148",
+   "found_count": 1,
+   "created_count": 0,
+   "updated_count": 0,
+   "unchanged_count": 0,
+   "duplicate_count": 1,
+   "failed_count": 0,
+   "error_summary": null
+  },
+  {
+   "id": 3,
+   "source_id": 1,
+   "source_code": "SAMPLE_CSV",
+   "trigger_type": "csv_import",
+   "status": "partial",
+   "started_at": "2026-10-11 09:49:16.195",
+   "finished_at": "2026-10-11 09:49:16.379",
+   "found_count": 26,
+   "created_count": 0,
+   "updated_count": 3,
+   "unchanged_count": 20,
+   "duplicate_count": 24,
+   "failed_count": 2,
+   "error_summary": null
+  },
+  {
+   "id": 2,
+   "source_id": 1,
+   "source_code": "SAMPLE_CSV",
+   "trigger_type": "csv_import",
+   "status": "succeeded",
+   "started_at": "2026-10-11 09:48:57.367",
+   "finished_at": "2026-10-11 09:48:57.421",
+   "found_count": 5,
+   "created_count": 2,
+   "updated_count": 3,
+   "unchanged_count": 0,
+   "duplicate_count": 3,
+   "failed_count": 0,
+   "error_summary": null
+  },
+  {
+   "id": 1,
+   "source_id": 1,
+   "source_code": "SAMPLE_CSV",
+   "trigger_type": "csv_import",
+   "status": "partial",
+   "started_at": "2026-10-11 09:48:56.505",
+   "finished_at": "2026-10-11 09:48:56.696",
+   "found_count": 26,
+   "created_count": 22,
+   "updated_count": 0,
+   "unchanged_count": 1,
+   "duplicate_count": 2,
+   "failed_count": 2,
+   "error_summary": null
+  }
+ ],
+ "page": 1,
+ "pageSize": 50,
+ "total": 4
+}

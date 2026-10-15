@@ -1,0 +1,15 @@
+{
+ "data": [
+  {
+   "id": 1,
+   "gig_id": 23,
+   "gig_title": "AI Reels Content Producer",
+   "matched_gig_id": 1,
+   "matched_title": "Short-Form Video Editor",
+   "matched_external_id": "GIG-RR-101",
+   "match_signal": "content_similarity",
+   "similarity": "1.0000",
+   "resolution": "dismissed"
+  }
+ ]
+}

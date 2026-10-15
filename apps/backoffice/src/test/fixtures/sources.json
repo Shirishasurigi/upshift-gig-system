@@ -1,0 +1,72 @@
+{
+ "data": [
+  {
+   "id": 1,
+   "code": "SAMPLE_CSV",
+   "name": "Supplied sample dataset (CSV)",
+   "access_method": "csv_import",
+   "access_method_notes": "Developer-supplied 100-200 sample gigs; no external access.",
+   "terms_url": null,
+   "terms_reviewed_at": "2026-10-11 09:48:55.755",
+   "robots_respected": 1,
+   "rate_limit_per_minute": 600,
+   "enablement": "enabled",
+   "health": "healthy",
+   "health_message": null,
+   "last_health_check_at": null,
+   "last_successful_run_at": "2026-10-11 09:49:17.150",
+   "referral_required": 0
+  },
+  {
+   "id": 2,
+   "code": "MERCOR",
+   "name": "Mercor",
+   "access_method": "official_api",
+   "access_method_notes": "Placeholder. Determine official API / feed / permitted page access and review ToS before enabling.",
+   "terms_url": null,
+   "terms_reviewed_at": "2026-10-11 09:49:17.205",
+   "robots_respected": 1,
+   "rate_limit_per_minute": 10,
+   "enablement": "disabled",
+   "health": "unknown",
+   "health_message": null,
+   "last_health_check_at": null,
+   "last_successful_run_at": null,
+   "referral_required": 0
+  },
+  {
+   "id": 3,
+   "code": "MINDRIFT",
+   "name": "Mindrift",
+   "access_method": "undetermined",
+   "access_method_notes": "Placeholder. Determine official API / feed / permitted page access and review ToS before enabling.",
+   "terms_url": null,
+   "terms_reviewed_at": null,
+   "robots_respected": 1,
+   "rate_limit_per_minute": 10,
+   "enablement": "disabled",
+   "health": "unknown",
+   "health_message": null,
+   "last_health_check_at": null,
+   "last_successful_run_at": null,
+   "referral_required": 0
+  },
+  {
+   "id": 4,
+   "code": "FIVERR",
+   "name": "Fiverr",
+   "access_method": "undetermined",
+   "access_method_notes": "Placeholder. Determine official API / feed / permitted page access and review ToS before enabling.",
+   "terms_url": null,
+   "terms_reviewed_at": null,
+   "robots_respected": 1,
+   "rate_limit_per_minute": 10,
+   "enablement": "disabled",
+   "health": "unknown",
+   "health_message": null,
+   "last_health_check_at": null,
+   "last_successful_run_at": null,
+   "referral_required": 0
+  }
+ ]
+}

@@ -1,0 +1,209 @@
+{
+ "reviews": [
+  {
+   "id": 20,
+   "action": "approve",
+   "from_workflow_state": "review_pending",
+   "to_workflow_state": "approved",
+   "from_availability": "active",
+   "to_availability": "active",
+   "field_changes": null,
+   "note": null,
+   "created_at": "2026-10-11 09:49:16.459",
+   "reviewer": "Rita Reviewer"
+  }
+ ],
+ "versions": [
+  {
+   "version_no": 2,
+   "change_origin": "reviewer",
+   "changed_fields": {
+    "title": {
+     "new": "Short-Form Video Editor",
+     "old": "AI Reels Content Producer"
+    },
+    "posted_at": {
+     "new": "2026-09-25",
+     "old": "2026-09-18"
+    },
+    "max_amount": {
+     "new": 99,
+     "old": "45.00"
+    },
+    "min_amount": {
+     "new": 99,
+     "old": "45.00"
+    },
+    "payment_amount": {
+     "new": "$99 / hr",
+     "old": "$45 / hr"
+    },
+    "short_description": {
+     "new": "Short-Form Video Editor: Create and edit short-form videos using AI-assisted tools.",
+     "old": "AI Reels Content Producer: Create and edit short-form videos using AI-assisted tools."
+    }
+   },
+   "created_at": "2026-10-11 09:49:17.180",
+   "changed_by": "Rita Reviewer"
+  },
+  {
+   "version_no": 1,
+   "change_origin": "csv_import",
+   "changed_fields": null,
+   "created_at": "2026-10-11 09:48:56.563",
+   "changed_by": null
+  }
+ ],
+ "referralChanges": [
+  {
+   "change_type": "create",
+   "old_value": null,
+   "new_value": "ABC123",
+   "created_at": "2026-10-11 09:49:15.388",
+   "changed_by": "Paul Publisher"
+  },
+  {
+   "change_type": "deactivate",
+   "old_value": "ABC123",
+   "new_value": null,
+   "created_at": "2026-10-11 09:49:15.371",
+   "changed_by": "Rita Reviewer"
+  },
+  {
+   "change_type": "update",
+   "old_value": "https://ref.example.com/abc",
+   "new_value": "ABC123",
+   "created_at": "2026-10-11 09:49:15.355",
+   "changed_by": "Paul Publisher"
+  },
+  {
+   "change_type": "create",
+   "old_value": null,
+   "new_value": "https://ref.example.com/abc",
+   "created_at": "2026-10-11 09:49:15.345",
+   "changed_by": "Rita Reviewer"
+  }
+ ],
+ "audit": [
+  {
+   "action": "accept_source_changes",
+   "actor_type": "user",
+   "actor": "Rita Reviewer",
+   "details": {
+    "fields": [
+     "title",
+     "posted_at",
+     "max_amount",
+     "min_amount",
+     "payment_amount",
+     "short_description"
+    ],
+    "reopened_for_approval": true
+   },
+   "created_at": "2026-10-11 09:49:17.181"
+  },
+  {
+   "action": "rediscovery_held",
+   "actor_type": "discovery_agent",
+   "actor": null,
+   "details": {
+    "state": "approved",
+    "fields": [
+     "title",
+     "payment_amount",
+     "min_amount",
+     "max_amount",
+     "posted_at",
+     "short_description"
+    ],
+    "run_id": 4
+   },
+   "created_at": "2026-10-11 09:49:17.147"
+  },
+  {
+   "action": "approve",
+   "actor_type": "user",
+   "actor": "Rita Reviewer",
+   "details": {
+    "to": "approved",
+    "from": "review_pending",
+    "availability": "active"
+   },
+   "created_at": "2026-10-11 09:49:16.463"
+  },
+  {
+   "action": "rediscovery_conflict",
+   "actor_type": "discovery_agent",
+   "actor": null,
+   "details": {
+    "fields": [
+     "title",
+     "short_description",
+     "origin_url"
+    ],
+    "run_id": 3
+   },
+   "created_at": "2026-10-11 09:49:16.366"
+  },
+  {
+   "action": "referral_set",
+   "actor_type": "user",
+   "actor": "Paul Publisher",
+   "details": {
+    "type": "id"
+   },
+   "created_at": "2026-10-11 09:49:15.389"
+  },
+  {
+   "action": "referral_removed",
+   "actor_type": "user",
+   "actor": "Rita Reviewer",
+   "details": {},
+   "created_at": "2026-10-11 09:49:15.372"
+  },
+  {
+   "action": "referral_set",
+   "actor_type": "user",
+   "actor": "Paul Publisher",
+   "details": {
+    "type": "id"
+   },
+   "created_at": "2026-10-11 09:49:15.355"
+  },
+  {
+   "action": "referral_set",
+   "actor_type": "user",
+   "actor": "Rita Reviewer",
+   "details": {
+    "type": "link"
+   },
+   "created_at": "2026-10-11 09:49:15.346"
+  },
+  {
+   "action": "verified",
+   "actor_type": "verification_engine",
+   "actor": null,
+   "details": {
+    "result": "active",
+    "trigger": "discovery",
+    "confidence": 1,
+    "human_pinned": false
+   },
+   "created_at": "2026-10-11 09:49:08.916"
+  },
+  {
+   "action": "rediscovery_conflict",
+   "actor_type": "discovery_agent",
+   "actor": null,
+   "details": {
+    "fields": [
+     "title",
+     "short_description",
+     "origin_url"
+    ],
+    "run_id": 1
+   },
+   "created_at": "2026-10-11 09:48:56.686"
+  }
+ ]
+}

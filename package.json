@@ -1,8 +1,13 @@
 {
   "name": "upshift-gig-system",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "dev:api": "npm run dev -w apps/api"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
   }
 }
