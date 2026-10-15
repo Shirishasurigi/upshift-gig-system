@@ -5,7 +5,10 @@
     "apps/*"
   ],
   "scripts": {
-    "dev:api": "npm run dev -w apps/api"
+    "dev:api": "npm run dev -w apps/api",
+    "dev:backoffice": "npm run dev -w apps/backoffice",
+    "dev:website": "npm run dev -w apps/website",
+    "build:website": "npm run build -w apps/website"
   },
   "devDependencies": {
     "jsdom": "^26.1.0"
