@@ -1,99 +1,123 @@
-# UpShift – AI-Powered Gig Discovery, Verification & Publishing System
+﻿# UpShift — AI-Powered Gig Discovery, Verification & Publishing System
 
-Independent, standalone system (own repo, own MySQL database, own API, own review UI).
-**No UpShift production database, keys, code or infrastructure is used or required.**
+An independent gig discovery and review system with its own API, MySQL database, and review interface.
 
-> Discovery is automated. Verification is evidence-based. **Publishing is always a human decision.**
+> Discovery is automated. Verification is evidence-based. Publishing remains a human decision.
 
-## 1. Tech stack (fixed)
+## 1. Technology stack
 
 | Layer | Technology |
 |---|---|
-| End-user website | Next.js (SSG/ISR) on Node.js |
-| Back office (review UI) | Vite + React + TypeScript (static deployment) |
-| Backend / API + worker | Node.js 20+ · Fastify · TypeScript |
-| Database | MySQL 8.0+ (InnoDB, utf8mb4) |
-| Tooling | npm workspaces, Git/GitHub, REST/JSON, Vitest |
+| API and worker | Node.js, Fastify, TypeScript |
+| Back office | Vite, React, TypeScript |
+| Public website | Next.js |
+| Database | MySQL 8+ |
+| Package management | npm workspaces |
+| Testing | Vitest for back-office tests |
 
-## 2. Repository layout
+## 2. Repository structure
 
-```
-upshift-gig-system/
-├─ apps/
-│  ├─ api/            Fastify API + in-process worker (discovery, verification, publishing, notifications)
-│  ├─ backoffice/     Vite + React review dashboard (static build)
-│  └─ website/        Next.js public Opportunities page (SSG/ISR)
-├─ packages/
-│  └─ shared/         TypeScript types, zod schemas, CSV column contract, enums
-├─ db/
-│  └─ migrations/     001…009 versioned SQL (-- migrate:up / -- migrate:down)
-├─ data/sample/       Supplied sample dataset (100–200 gigs) + CSV template
-├─ docs/              Architecture, ERD, API, CSV contract, test plan, limitations
-├─ .env.example
-└─ README.md
-```
+- `apps/api/` — API endpoints and discovery, verification, classification, review, and publishing logic.
+- `apps/backoffice/` — review dashboard.
+- `apps/website/` — public website.
+- `packages/shared/` — shared contracts and types, where applicable.
+- `db/migrations/` — database migration files.
+- `data/sample/` — sample data and CSV resources.
+- `docs/` — architecture, ERD, API, CSV contract, testing, and demo documentation.
+- `.env.example` — example environment configuration.
+- `.env` — local configuration; do not commit it.
 
 ## 3. Prerequisites
-Node.js ≥ 20, npm ≥ 10, MySQL ≥ 8.0.16 (CHECK constraints are enforced from this version), Git.
-Your DB user needs `CREATE, ALTER, INDEX, REFERENCES, TRIGGER, CREATE VIEW` on the project database
-(if binary logging is on: `SET GLOBAL log_bin_trust_function_creators = 1` or SUPER).
 
-## 4. Setup (fresh machine)
+Install the required versions of Node.js, npm, and MySQL for this project. The intended database baseline is MySQL 8 or newer.
 
-```bash
-git clone <your-repo-url> upshift-gig-system && cd upshift-gig-system
-npm install
+Configure local environment variables using `.env.example`. Use development credentials only and never publish passwords, tokens, or other secrets.
 
-cp .env.example .env            # fill in YOUR dev values; never commit .env
+## 4. Start the applications
 
-# create database + user (once)
-mysql -u root -p -e "CREATE DATABASE upshift_gigs_dev CHARACTER SET utf8mb4;
-  CREATE USER 'upshift_gigs'@'%' IDENTIFIED BY 'change-me';
-  GRANT ALL ON upshift_gigs_dev.* TO 'upshift_gigs'@'%';"
+Run commands from the repository root in separate PowerShell terminals.
 
-npm run db:migrate              # applies db/migrations/*.sql in order, tracked in schema_migrations
-npm run db:seed:admin           # creates first admin from SEED_ADMIN_* env vars
-npm run sample:load             # imports data/sample/*.csv via the SAMPLE_CSV source (full pipeline)
+### API
 
-npm run dev:api                 # http://localhost:4000   (Swagger UI at /docs)
-npm run dev:backoffice          # http://localhost:5173
-npm run dev:website             # http://localhost:3000
+```powershell
+npm run dev:api
 ```
 
-> The npm script names above are the **contract** the implementation must provide (they are part of the Definition of Done).
+### Back office
 
-### Useful commands
+```powershell
+npm run dev:backoffice
+```
+
+### Public website
+
+```powershell
+npm run dev:website
+```
+
+Use the local URLs printed by each development server. Typical configured ports are API `4000`, back office `5173`, and website `3000`; confirm the actual output.
+
+The API health endpoint is:
+
+`http://localhost:4000/health`
+
+The API documentation may be available at `/docs` if enabled by the current server configuration.
+
+## 5. Available package scripts
+
+The following root scripts were verified in `package.json`:
+
 | Command | Purpose |
 |---|---|
-| `npm run db:migrate` / `db:rollback` / `db:status` | Apply / revert last / list migrations |
-| `npm run db:reset` | Drop → create → migrate → seed (dev only) |
-| `npm test` | Unit + integration tests (needs a throw-away MySQL DB, see `.env.test`) |
-| `npm run export:csv -- --scope=approved` | Writes the 19-column CSV |
-| `npm run build` | Builds API, back office (static) and website |
+| `npm run dev:api` | Start the API development server |
+| `npm run dev:backoffice` | Start the back-office development server |
+| `npm run dev:website` | Start the website development server |
+| `npm run build:website` | Build the website |
 
-## 5. Using the system (demo path)
-1. **Sources** (back office → Sources): `SAMPLE_CSV` is enabled. Mercor / Mindrift / Fiverr are placeholders: they **cannot** be enabled until an access method and a terms review are recorded (enforced by a DB constraint).
-2. **Run discovery** on `SAMPLE_CSV` → candidates are extracted, normalised, classified (M1–M6 or "manual"), verified, de-duplicated and land in **Review Pending**.
-3. **Review**: open a gig → inspect source link, evidence, confidence → edit / reclassify → **Approve**, **Reject**, **Pause** or **Stop**.
-4. **Referral**: a human enters the referral ID/link (mandatory per source if configured). The system never creates third-party accounts.
-5. **Publish** (publisher role): system re-verifies immediately; if still valid and all required fields exist → published, ISR revalidated, notification event created.
-6. **Export**: `GET /api/v1/csv/export?scope=approved` → exact 19-column template.
-7. **Health sweep** keeps checking published gigs; a gig that becomes Stopped is automatically unpublished.
+Additional workspace scripts can be inspected in the relevant `apps/*/package.json` files. Do not assume a root script exists unless it is defined in the root `package.json`.
 
-## 6. Database
-* Schema/ERD: `docs/03_ERD.md` · Migrations: `db/migrations/` (fresh DB is fully rebuildable).
-* **Backup:** `mysqldump --single-transaction --routines --triggers -u <user> -p upshift_gigs_dev > backup.sql`
-* **Restore:** `mysql -u <user> -p -e "DROP DATABASE IF EXISTS upshift_gigs_dev; CREATE DATABASE upshift_gigs_dev CHARACTER SET utf8mb4;" && mysql -u <user> -p upshift_gigs_dev < backup.sql`
-* Or rebuild from scratch: `npm run db:reset && npm run sample:load`.
+## 6. Demo workflow
 
-## 7. Security & compliance
-* Secrets only via environment variables; `.env` is git-ignored; CI/test T15 greps the repo for secrets.
-* Passwords hashed (argon2/bcrypt); JWT in httpOnly cookie; role-based access (admin / reviewer / publisher).
-* Discovery honours robots.txt, rate limits, login/CAPTCHA/paywall walls (skip + log, never bypass).
-* Back office bundle contains **no** secrets (only `VITE_API_BASE_URL`).
+1. Check API and database health.
+2. Review the configured discovery sources.
+3. Explain how discovery gathers and normalises gig candidates.
+4. Inspect verification status and supporting evidence.
+5. Review a candidate and demonstrate available human review actions.
+6. Explain referral requirements where applicable.
+7. Demonstrate publication readiness and the pre-publish verification gate using an appropriate existing record.
+8. Explain the 19-column CSV contract.
+9. Explain how health checks can detect gigs that are no longer active.
+
+See `docs/08_DEMO_GUIDE.md` for the detailed walkthrough.
+
+Do not run migrations, imports, discovery pipelines, seed commands, or database resets against the current development database during a demo unless their effects are understood and explicitly approved.
+
+## 7. Security
+
+- Keep `.env` and credentials out of version control.
+- Use authorised demo accounts and avoid displaying secrets or personal data.
+- Respect source access requirements and website restrictions.
+- Treat review and publication as controlled, human-authorised actions.
+- Test database-changing workflows against an isolated test database whenever possible.
 
 ## 8. Documentation index
-`docs/01_LEAD_BRIEFING.md` · `02_ARCHITECTURE.md` · `03_ERD.md` · `04_API.md` · `05_CSV_CONTRACT.md` · `06_TEST_PLAN.md` · `07_KNOWN_LIMITATIONS.md`
 
-## 9. Deployment
-* API/worker + website: Node.js processes (e.g. PM2/systemd/container). Back office: `npm run build -w apps/backoffice` → static files on any static host. MySQL: managed or self-hosted 8.x.
+- `docs/02_ARCHITECTURE.md` — system architecture.
+- `docs/03_ERD.md` — database entity-relationship documentation.
+- `docs/04_API.md` — API documentation.
+- `docs/05_CSV_CONTRACT.md` — CSV contract.
+- `docs/06_TEST_PLAN.md` — acceptance test plan mapped to FRD scenarios.
+- `docs/07_TEST_EXECUTION_RECORD.md` — observed test results and outstanding checks.
+- `docs/08_DEMO_GUIDE.md` — demo preparation and walkthrough.
+
+## 9. Testing status
+
+The recorded checks include 33 passing back-office tests, a successful API TypeScript check, and a successful API health/database connectivity check.
+
+**Overall acceptance status: Partially Verified.** Several FRD acceptance scenarios still require end-to-end testing. See `docs/06_TEST_PLAN.md` and `docs/07_TEST_EXECUTION_RECORD.md`. Do not interpret unrun scenarios as passed.
+
+## 10. Database safety
+
+Database migrations, CSV imports, discovery pipelines, seed commands, and reset operations may change data. Review the relevant command implementation and use a disposable test database before running destructive or data-changing tests.
+
+For database design and API details, consult `docs/03_ERD.md` and `docs/04_API.md`.
